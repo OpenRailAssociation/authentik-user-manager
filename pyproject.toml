@@ -1,0 +1,56 @@
+[tool.poetry]
+name = "authentik-user-manager"
+version = "0.1.0"
+description = "Managing Authentik users via YAML files"
+# repository = ""
+keywords = []
+classifiers = []
+authors = ["Max Mehl <max.mehl@deutschebahn.com>"]
+readme = "README.md"
+license = "Apache-2.0"
+packages = [{ include = "auth_user_mgr" }]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pyyaml = "^6.0.2"
+requests = "^2.32.3"
+jinja2 = "^3.1.5"
+
+[tool.poetry.scripts]
+auth-user-mgr = "auth_user_mgr.main:cli"
+
+[tool.poetry.group.dev.dependencies]
+isort = "^6.0.0"
+mypy = "^1.15.0"
+pylint = "^3.3.4"
+black = "^25.1.0"
+types-requests = "^2.32.0.20241016"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# FORMATTING settings
+[tool.isort]
+profile = "black"
+
+[tool.black]
+line-length = 100
+
+# MYPY settings
+[tool.mypy]
+files = ["auth_user_mgr/*.py"]
+disable_error_code = ["import-untyped"]
+
+# Bump-My-Version
+[tool.bumpversion]
+commit = true
+tag = true
+allow_dirty = false
+tag_name = "v{new_version}"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+regex = true
+search = "^version = \"{current_version}\""
+replace = "version = \"{new_version}\""

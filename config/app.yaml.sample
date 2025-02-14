@@ -1,0 +1,12 @@
+authentik_url: "https://authentik.example.com"
+authentik_token: "ADMIN_API_TOKEN"
+authentik_title: "Your Org Userportal"
+
+smtp_server: smtp.example.com
+smtp_port: 587
+smtp_user: noreply@example.com
+smtp_password: "your-password"
+smtp_starttls: true
+smtp_from: noreply@example.com
+
+email_template_invitation: "templates/invitation.html.j2"

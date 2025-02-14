@@ -1,0 +1,11 @@
+invitation_flow_slug: default-enrollment-flow
+
+users:
+  - name: Tester Testerson
+    email: tester@example.com
+    groups:
+      - Group 1
+      - Group 2
+
+  - name: Jane Doe
+    email: jane@example.com
