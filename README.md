@@ -88,6 +88,19 @@ auth-user-mgr sync --help
 
 The application's configuration and the list of managed users are stored in YAML files. You can find sample configuration files in the [`config/`](./config/) directory.
 
+#### API permissions
+
+Especially for automated syncs, it is recommended to set up a system user in Authentik and create an API token for them. The following permissions are required:
+
+- User: Can view User
+- Group: Can view Group
+- Group: Add user to group
+- Group: Remove user from group
+- Flow: Can view Flow
+- Invitation: Can view Invitation
+- Invitation: Can add Invitation
+- Invitation: Can delete Invitation
+
 
 ## Development and Contribution
 

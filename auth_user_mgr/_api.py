@@ -86,6 +86,16 @@ class AuthentikAPI:
             else:
                 raise ValueError(f"Invalid method: {method}")
 
+        if response.status_code not in range(200, 300):
+            logging.error(
+                "API call '%s %s' with data '%s' exited with a non 2xx status code (%s): %s",
+                method,
+                url,
+                data,
+                response.status_code,
+                response.text,
+            )
+
         # Convert response JSON to dict
         try:
             result: dict = json.loads(response.text)
