@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 DB Systel GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
 authentik_url: "https://authentik.example.com"
 authentik_token: "ADMIN_API_TOKEN"
 authentik_title: "Your Org Userportal"
