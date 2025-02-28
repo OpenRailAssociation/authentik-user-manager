@@ -84,6 +84,11 @@ auth-user-mgr --help
 auth-user-mgr sync --help
 ```
 
+### Configuration
+
+The application's configuration and the list of managed users are stored in YAML files. You can find sample configuration files in the [`config/`](./config/) directory.
+
+
 ## Development and Contribution
 
 We welcome contributions to improve this library. Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for all information.
