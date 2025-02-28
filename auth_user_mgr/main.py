@@ -39,7 +39,9 @@ parser_sync = subparsers.add_parser(
 parser_sync.add_argument("-c", "--config", help="Path to app config file", required=True)
 parser_sync.add_argument("-u", "--users", help="Path to user inventory file", required=True)
 parser_sync.add_argument(
-    "--dry", action="store_true", help="Run a dry sync which does not make any productive changes"
+    "--dry",
+    action="store_true",
+    help="Run a dry sync which does not make any productive changes and does not send emails",
 )
 parser_sync.add_argument("--no-email", action="store_true", help="Do not send any emails")
 
@@ -224,7 +226,7 @@ def cli() -> None:
             smtp_password=cfg_app.get("smtp_password", ""),
             smtp_starttls=cfg_app.get("smtp_starttls", False),
             smtp_from=cfg_app.get("smtp_from", ""),
-            dry=args.no_email,
+            dry=any([args.dry, args.no_email]),
         )
         mail.create_copy_with_details(
             template=cfg_app.get("email_template_invitation", ""),
