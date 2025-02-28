@@ -14,6 +14,7 @@ def read_yaml_config_file(path: str) -> dict:
     except FileNotFoundError as exc:
         raise FileNotFoundError(f"Config file not found: {path}") from exc
 
+
 def read_app_and_users_config(app_config_path: str, user_config_path: str) -> tuple[dict, dict]:
     """Read app and user config files and return a tuple of dicts"""
     app_config = read_yaml_config_file(app_config_path)

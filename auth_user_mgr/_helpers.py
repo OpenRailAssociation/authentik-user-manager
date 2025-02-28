@@ -25,6 +25,7 @@ def make_url(base_url: str, *uris: str, **params: str):
         url = f"{url}/?{urlencode(params)}"
     return url
 
+
 def compare_two_lists(list1: list[str], list2: list[str]):
     """
     Compares two lists of strings and returns a tuple containing elements
