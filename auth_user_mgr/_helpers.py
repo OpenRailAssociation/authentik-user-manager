@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 DB Systel GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Helper functions"""
 
 import json
@@ -24,6 +28,7 @@ def make_url(base_url: str, *uris: str, **params: str):
     if params:
         url = f"{url}/?{urlencode(params)}"
     return url
+
 
 def compare_two_lists(list1: list[str], list2: list[str]):
     """

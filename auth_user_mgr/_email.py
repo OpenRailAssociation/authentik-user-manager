@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 DB Systel GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Class and functions to send an email to the invitees"""
 
 import logging
@@ -9,10 +13,10 @@ from email.utils import formatdate, make_msgid
 from jinja2 import Template
 
 
-class Mail:
+class Mail:  # pylint: disable=too-many-instance-attributes
     """Class for an email with specific template and subject this app will send"""
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-positional-arguments, too-many-arguments
         self,
         smtp_server: str,
         smtp_port: str | int,

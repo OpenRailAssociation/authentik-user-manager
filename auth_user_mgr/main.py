@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 DB Systel GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Module for managing Authentik users and group memberships via YAML configuration files.
 
 This module provides functionality to synchronize user accounts and group memberships in
