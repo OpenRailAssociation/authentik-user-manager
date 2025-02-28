@@ -2,9 +2,8 @@
 name = "authentik-user-manager"
 version = "0.1.0"
 description = "Managing Authentik users via YAML files"
-# repository = ""
-keywords = []
-classifiers = []
+repository = "https://github.com/OpenRailAssociation/authentik-user-manager"
+keywords = ["authentik", "user-management"]
 authors = ["Max Mehl <max.mehl@deutschebahn.com>"]
 readme = "README.md"
 license = "Apache-2.0"
