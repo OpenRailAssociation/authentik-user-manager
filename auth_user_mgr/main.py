@@ -28,9 +28,8 @@ subparsers = parser.add_subparsers(dest="command", help="Available commands", re
 
 # Common flags, usable for all effective subcommands
 common_flags = argparse.ArgumentParser(add_help=False)  # No automatic help to avoid duplication
-common_flags.add_argument(
-    "-v", "--verbose", action="store_true", help="Print INFO and DEBUG logging"
-)
+common_flags.add_argument("-v", "--verbose", action="store_true", help="Print INFO logging")
+common_flags.add_argument("-vv", "--debug", action="store_true", help="Print DEBUG logging")
 
 # SYNC commands
 parser_sync = subparsers.add_parser(
@@ -46,12 +45,14 @@ parser_sync.add_argument(
 parser_sync.add_argument("--no-email", action="store_true", help="Do not send any emails")
 
 
-def configure_logger(verbose: bool = False) -> logging.Logger:
-    """Configure and return a logger with appropriate settings.
+def configure_logger(verbose: bool = False, debug: bool = False) -> logging.Logger:
+    """
+    Configure and return a logger with appropriate settings. If verbose or debug is False (default),
+    logging level is WARNING
 
     Args:
-        verbose (bool, optional): If True, sets log level to DEBUG, otherwise WARNING.
-            Defaults to False.
+        verbose (bool, optional): If True, sets log level to INFO. Defaults to False.
+        debug (bool, optional): If True, sets log level to DEBUG. Defaults to False.
 
     Returns:
         logging.Logger: Configured logger instance.
@@ -62,8 +63,10 @@ def configure_logger(verbose: bool = False) -> logging.Logger:
         format="[%(asctime)s] %(levelname)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    if verbose:
+    if debug:
         log.setLevel(logging.DEBUG)
+    elif verbose:
+        log.setLevel(logging.INFO)
     else:
         log.setLevel(logging.WARNING)
 
@@ -136,7 +139,7 @@ def user_check_existence(api: AuthentikAPI, user: User, mail: Mail) -> bool:
         print(f"User {user.email} is pending invitation: {invite_url}")
     else:
         invitation_url = api.create_invitation(user=user)
-        mail.send_email(recipient=user.email, link=invitation_url)
+        mail.send_email(recipient=user.email, link=invitation_url, message="invitation")
         print(f"Invitation created for and sent to {user.email}: {invitation_url}")
 
     return False
@@ -207,7 +210,7 @@ def cli() -> None:
         None
     """
     args = parser.parse_args()
-    configure_logger(args.verbose)
+    configure_logger(verbose=args.verbose, debug=args.debug)
 
     if args.command == "sync":
         cfg_app, cfg_users = read_app_and_users_config(args.config, args.users)
@@ -229,7 +232,7 @@ def cli() -> None:
             dry=any([args.dry, args.no_email]),
         )
         mail.create_copy_with_details(
-            template=cfg_app.get("email_template_invitation", ""),
+            template_invitation=cfg_app.get("email_template_invitation", ""),
             subject_suffix="Invitation to create account",
             instance_url=cfg_app.get("authentik_url", ""),
             instance_title=cfg_app.get("authentik_title", ""),
