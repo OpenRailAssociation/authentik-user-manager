@@ -18,15 +18,22 @@ from ._user import User
 class AuthentikAPI:
     """Class for Authentik API and"""
 
-    def __init__(self, url: str, token: str, invitation_flow_slug: str, dry: bool = False):
+    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+        self,
+        url: str,
+        token: str,
+        invitation_flow_slug: str,
+        invitation_expiry_days: int = 30,
+        dry: bool = False,
+    ):
         """Initialize the Authentik API client.
 
         Args:
             url (str): Base URL of the Authentik instance.
             token (str): API token for authentication.
             invitation_flow_slug (str): Slug for the invitation flow.
-            dry (bool, optional): If True, non-GET API calls will not be executed.
-                Defaults to False.
+            invitation_expiry_days (int, optional): Days the invitation is valid. Defaults to 30
+            dry (bool, optional): If True, non-GET API calls will not be executed. Defaults to False
         """
         self.url: str = url + "/api/v3"
         self.headers: dict[str, str] = {
@@ -35,6 +42,7 @@ class AuthentikAPI:
         }
         self.flow_slug: str = invitation_flow_slug
         self.flow_uuid: str = self.get_invitation_flow_uuid()
+        self.invitation_expiry_days: int = int(invitation_expiry_days)
         self.dry: bool = dry
 
     def api_call(  # pylint: disable=too-many-positional-arguments, too-many-arguments
@@ -178,8 +186,8 @@ class AuthentikAPI:
             raise ValueError(f"User {user.username} already exists")
 
         api_url = self.url + "/stages/invitation/invitations/"
-        # Create an expiry time of now + 30 days
-        expiry_time = datetime.now(timezone.utc) + timedelta(days=30)
+        # Create an expiry time of now + by default 30 days
+        expiry_time = datetime.now(timezone.utc) + timedelta(days=self.invitation_expiry_days)
         data = {
             "name": user.invite_name,  # name if invitation
             "expires": expiry_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),

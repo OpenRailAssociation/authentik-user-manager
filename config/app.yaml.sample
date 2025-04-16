@@ -2,16 +2,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# Basic configuration for the Auth User Manager application
 authentik_url: "https://authentik.example.com"
 authentik_token: "ADMIN_API_TOKEN"
 authentik_title: "Your Org Userportal"
 
+# SMTP configuration for sending emails
 smtp_server: smtp.example.com
 smtp_port: 587
 smtp_user: noreply@example.com
 smtp_password: "your-password"
 smtp_starttls: true
 smtp_from: noreply@example.com
+
+# Expiry time for an invitation in days. Default: 30
+# invitation_expiry_days: 30
 
 # You can override the default templates (`auth_user_mgr/templates/`) with your own Jinja2 templates
 # email_template_invitation: "mytemplates/invitation.html.j2"
