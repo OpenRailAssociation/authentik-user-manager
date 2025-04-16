@@ -230,6 +230,7 @@ def cli() -> None:
             url=cfg_app.get("authentik_url", ""),
             token=cfg_app.get("authentik_token", ""),
             invitation_flow_slug=cfg_users.get("invitation_flow_slug", ""),
+            create_missing_groups=cfg_app.get("create_missing_groups", False),
             invitation_expiry_days=cfg_app.get("invitation_expiry_days", 30),
             dry=args.dry,
         )

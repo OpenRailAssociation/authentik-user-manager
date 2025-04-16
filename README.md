@@ -96,6 +96,7 @@ Especially for automated syncs, it is recommended to set up a system user in Aut
 - Group: Can view Group
 - Group: Add user to group
 - Group: Remove user from group
+- Group: Can add Group
 - Flow: Can view Flow
 - Invitation: Can view Invitation
 - Invitation: Can add Invitation
