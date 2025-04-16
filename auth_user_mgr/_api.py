@@ -23,6 +23,7 @@ class AuthentikAPI:
         url: str,
         token: str,
         invitation_flow_slug: str,
+        create_missing_groups: bool = False,
         invitation_expiry_days: int = 30,
         dry: bool = False,
     ):
@@ -42,6 +43,7 @@ class AuthentikAPI:
         }
         self.flow_slug: str = invitation_flow_slug
         self.flow_uuid: str = self.get_invitation_flow_uuid()
+        self.create_missing_groups: bool = create_missing_groups
         self.invitation_expiry_days: int = int(invitation_expiry_days)
         self.dry: bool = dry
 
@@ -234,12 +236,25 @@ class AuthentikAPI:
         api_url = self.url + "/core/groups/"
         return self.api_call(url=api_url, returns_list=True)
 
+    def create_group(self, group_name: str) -> str:
+        """Create a new group"""
+        api_url = self.url + "/core/groups/"
+        data = {"name": group_name}
+        group = self.api_call(url=api_url, method="POST", data=data)
+        print("Group created:", group_name)
+        return str(group.get("pk", ""))
+
     def get_group_uuid_by_name(self, group_name: str) -> str:
         """Get a specific group's uuid by its name"""
         api_url = self.url + "/core/groups/"
         group = self.api_call(url=api_url, data={"name": group_name}, returns_list=True)
 
         if len(group) == 0:
+            if self.create_missing_groups:
+                # Create group if it does not exist
+                logging.info("Group %s does not exist, creating it", group_name)
+                return self.create_group(group_name=group_name)
+
             raise ValueError(f"No group with name {group_name} found")
         if len(group) > 1:
             raise ValueError(f"Multiple groups with name {group_name} found")

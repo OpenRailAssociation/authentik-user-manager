@@ -15,6 +15,9 @@ smtp_password: "your-password"
 smtp_starttls: true
 smtp_from: noreply@example.com
 
+# Create missing groups. Default: false
+# create_missing_groups: false
+
 # Expiry time for an invitation in days. Default: 30
 # invitation_expiry_days: 30
 
