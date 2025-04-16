@@ -102,7 +102,9 @@ def get_groups_of_users(api: AuthentikAPI) -> dict[int, list[str]]:
     return users_groups_mapping
 
 
-def user_check_existence(api: AuthentikAPI, user: User, mail: Mail) -> bool:
+def user_check_existence(
+    api: AuthentikAPI, user: User, mail: Mail, invitation_template: str = ""
+) -> bool:
     """Check if a user exists in Authentik and handle invitations accordingly.
 
     This function checks if a user exists, and if not, manages the invitation process.
@@ -112,6 +114,8 @@ def user_check_existence(api: AuthentikAPI, user: User, mail: Mail) -> bool:
         api (AuthentikAPI): Authentik API client instance.
         user (User): User object containing email and other user details.
         mail (Mail): Mail object for sending invitations.
+        invitation_template (str, optional): Path to a custom invitation template file.
+            Defaults to an empty string in which case the inbuilt template is used.
 
     Returns:
         bool: True if user exists, False if user needs to be invited.
@@ -139,7 +143,13 @@ def user_check_existence(api: AuthentikAPI, user: User, mail: Mail) -> bool:
         print(f"User {user.email} is pending invitation: {invite_url}")
     else:
         invitation_url = api.create_invitation(user=user)
-        mail.send_email(recipient=user.email, link=invitation_url, message="invitation")
+        mail.send_email(
+            recipient=user.email,
+            message="invitation",
+            template_file=invitation_template,
+            link=invitation_url,
+            invitation_expiry_days=api.invitation_expiry_days,
+        )
         print(f"Invitation created for and sent to {user.email}: {invitation_url}")
 
     return False
@@ -233,7 +243,6 @@ def cli() -> None:
             dry=any([args.dry, args.no_email]),
         )
         mail.create_copy_with_details(
-            template_invitation=cfg_app.get("email_template_invitation", ""),
             subject_suffix="Invitation to create account",
             instance_url=cfg_app.get("authentik_url", ""),
             instance_title=cfg_app.get("authentik_title", ""),

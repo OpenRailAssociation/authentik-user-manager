@@ -34,7 +34,6 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         self.smtp_starttls: bool = smtp_starttls
         self.smtp_from: str = smtp_from
         self.dry: bool = dry
-        self.template_invitation: str = ""
         self.subject_suffix: str = ""
         self.instance_url: str = ""
         self.instance_title: str = ""
@@ -44,7 +43,6 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         subject_suffix: str,
         instance_url: str,
         instance_title: str,
-        template_invitation: str = "",
     ):
         """
         Fills in the details of the email template and subject suffix, and return the class if you
@@ -53,12 +51,10 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         :param subject_suffix: Subject suffix for the email
         :param instance_url: URL of the Authentik instance
         :param instance_title: Title of the Authentik instance
-        :param template_invitation: Optional: Path to a Jinja2 template file for invitation emails
         """
         self.subject_suffix = subject_suffix
         self.instance_url = instance_url
         self.instance_title = instance_title
-        self.template_invitation = template_invitation
 
         return self
 
@@ -72,17 +68,17 @@ class Mail:  # pylint: disable=too-many-instance-attributes
 
         return template_dir
 
-    def read_template(self, message: str, file_path: str | Path) -> str:
+    def read_template(self, message: str, template_file: str) -> str:
         """
         Reads a Jinja2 template from a file and returns it as a string. If the template is empty,
         use the default template from ./templates/<type>.html
 
         :param message: Message type of the template (e.g., "invitation")
-        :param file_path: Path to the Jinja2 template file
+        :param template_file: Path to the Jinja2 template file
         :return: Template string
         """
         # Use default template path if no file path is set
-        if not file_path:
+        if not template_file:
             file_path = self.get_inbuilt_template_dir() / f"{message}.html.j2"
         else:
             file_path = Path(file_path).resolve()
@@ -92,15 +88,17 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         with open(file_path, "r", encoding="utf-8") as file:
             return file.read()
 
-    def send_email(self, message: str, recipient: str, link: str) -> None:
+    def send_email(
+        self, message: str, recipient: str, template_file: str = "", **template_vars
+    ) -> None:
         """
         Sends an email using a Jinja2 template.
         """
         # Read and render the email body using Jinja2
-        template_str = self.read_template(message=message, file_path=self.template_invitation)
+        template_str = self.read_template(message=message, template_file=template_file)
         template = Template(template_str, autoescape=True)
         email_body = template.render(
-            link=link, instance_url=self.instance_url, instance_title=self.instance_title
+            instance_url=self.instance_url, instance_title=self.instance_title, **template_vars
         )
 
         # Create the email message
@@ -113,6 +111,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes
 
         # Attach the email body as HTML
         msg.attach(MIMEText(email_body, "html"))
+        logging.debug("Email content: \n%s", msg.as_string())
 
         if self.dry:
             logging.info("Dry run, not sending email to %s", recipient)
