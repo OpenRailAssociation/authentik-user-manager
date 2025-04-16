@@ -139,7 +139,7 @@ def user_check_existence(api: AuthentikAPI, user: User, mail: Mail) -> bool:
         print(f"User {user.email} is pending invitation: {invite_url}")
     else:
         invitation_url = api.create_invitation(user=user)
-        mail.send_email(recipient=user.email, link=invitation_url)
+        mail.send_email(recipient=user.email, link=invitation_url, message="invitation")
         print(f"Invitation created for and sent to {user.email}: {invitation_url}")
 
     return False
@@ -232,7 +232,7 @@ def cli() -> None:
             dry=any([args.dry, args.no_email]),
         )
         mail.create_copy_with_details(
-            template=cfg_app.get("email_template_invitation", ""),
+            template_invitation=cfg_app.get("email_template_invitation", ""),
             subject_suffix="Invitation to create account",
             instance_url=cfg_app.get("authentik_url", ""),
             instance_title=cfg_app.get("authentik_title", ""),

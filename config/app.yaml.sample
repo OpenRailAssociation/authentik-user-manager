@@ -13,4 +13,5 @@ smtp_password: "your-password"
 smtp_starttls: true
 smtp_from: noreply@example.com
 
-email_template_invitation: "templates/invitation.html.j2"
+# You can override the default templates (`auth_user_mgr/templates/`) with your own Jinja2 templates
+# email_template_invitation: "mytemplates/invitation.html.j2"
