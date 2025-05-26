@@ -10,52 +10,64 @@ from pathlib import Path
 import yaml
 
 
-def read_yaml_config_files(file_or_dir: str, unique_key: str = "") -> list[dict]:
-    """Read a single YAML config file or a whole directory containing YAML files and return a
-    (combined) dict"""
-    logging.debug("Reading config file/directory: %s", file_or_dir)
-    yaml_file_paths: list[Path] = []
-    unique_key_values: list[str] = []
-    cfg_output: list[dict] = []
-
-    # Compose list of YAML file(s) from the given path
-    path: Path = Path(file_or_dir)
+def get_yaml_file_paths(file_or_dir: str) -> list[Path]:
+    """Get paths of YAML files from a directory or a single file"""
+    path = Path(file_or_dir)
     if path.is_dir():
-        yaml_file_paths = list(path.glob("*.yml"))
-        yaml_file_paths.extend(path.glob("*.yaml"))
-    elif path.is_file() and path.suffix in {".yaml", ".yml"}:
-        yaml_file_paths = [path]
-    else:
-        raise ValueError(f"Invalid path: {file_or_dir}. Must be a directory or a YAML file.")
+        return list(path.glob("*.yml")) + list(path.glob("*.yaml"))
+    if path.is_file() and path.suffix in {".yaml", ".yml"}:
+        return [path]
+    raise ValueError(f"Invalid path: {file_or_dir}. Must be a directory or a YAML file.")
 
+
+def load_yaml_file(file_path: Path):
+    """Load a YAML file and return its content"""
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f)
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"Config file not found: {file_path}") from e
+    except Exception as e:
+        raise RuntimeError(f"Error reading YAML file {file_path}: {e}") from e
+
+
+def check_unique_key(
+    items: list[dict], seen_values: set[str], unique_key: str, source: Path
+) -> None:
+    """Check if the unique key/value exists in the items and raise an error if duplicates are
+    found"""
+    for item in items:
+        assert isinstance(item, dict)
+        value = item.get(unique_key, "")
+        if value in seen_values:
+            raise ValueError(
+                f"The key/value '{unique_key}: {value}' in file '{source}' has already been seen."
+            )
+        seen_values.add(value)
+
+
+def read_yaml_config_files(file_or_dir: str, unique_key: str = "") -> list[dict]:
+    """Read YAML config files from a directory or a single file and return their content as a list
+    of dictionaries. If a unique key is provided, ensure that all items have unique values for that
+    key"""
+    logging.debug("Reading config file/directory: %s", file_or_dir)
+    yaml_file_paths = get_yaml_file_paths(file_or_dir)
     logging.debug("Found YAML files: %s", yaml_file_paths)
 
-    for yaml_file_path in yaml_file_paths:
-        logging.debug("Reading YAML file: %s", yaml_file_path)
-        try:
-            with open(yaml_file_path, "r", encoding="utf-8") as yaml_file:
-                yaml_content = yaml.safe_load(yaml_file)
+    seen_keys: set[str] = set()
+    cfg_output: list[dict] = []
 
-                # Check whether value of unique keys have been caught before
-                if unique_key:
-                    if isinstance(yaml_content, list):
-                        for element in yaml_content:
-                            assert isinstance(element, dict)
-                            if (value := element.get(unique_key, "")) in unique_key_values:
-                                raise ValueError(
-                                    f"The key/value '{unique_key}: {value}' in file '{yaml_file_path}' "
-                                    "has already been seen in the same or another file"
-                                )
-                            unique_key_values.append(value)
-                if len(yaml_file_paths) == 1:
-                    cfg_output.append(yaml_content)
-                else:
-                    cfg_output.extend(yaml_content)
+    for path in yaml_file_paths:
+        logging.debug("Reading YAML file: %s", path)
+        content = load_yaml_file(path)
 
-        except FileNotFoundError as exc:
-            raise FileNotFoundError(f"Config file not found: {path}") from exc
-        except Exception as exc:
-            raise RuntimeError(f"Error reading YAML file {yaml_file_path}: {exc}") from exc
+        if unique_key and isinstance(content, list):
+            check_unique_key(content, seen_keys, unique_key, path)
+
+        if len(yaml_file_paths) == 1:
+            cfg_output.append(content)
+        else:
+            cfg_output.extend(content)
 
     return cfg_output
 
