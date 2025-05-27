@@ -36,7 +36,9 @@ parser_sync = subparsers.add_parser(
     "sync", parents=[common_flags], help="Synchronise users to the Authentik instance"
 )
 parser_sync.add_argument("-c", "--config", help="Path to app config file", required=True)
-parser_sync.add_argument("-u", "--users", help="Path to user inventory file", required=True)
+parser_sync.add_argument(
+    "-u", "--users", help="Path to user inventory file or directory", required=True
+)
 parser_sync.add_argument(
     "--dry",
     action="store_true",
@@ -223,13 +225,14 @@ def cli() -> None:
     configure_logger(verbose=args.verbose, debug=args.debug)
 
     if args.command == "sync":
+        # TODO: document users changes in config and README
         cfg_app, cfg_users = read_app_and_users_config(args.config, args.users)
 
         # Initiate classes
         api = AuthentikAPI(
             url=cfg_app.get("authentik_url", ""),
             token=cfg_app.get("authentik_token", ""),
-            invitation_flow_slug=cfg_users.get("invitation_flow_slug", ""),
+            invitation_flow_slug=cfg_app.get("invitation_flow_slug", ""),
             create_missing_groups=cfg_app.get("create_missing_groups", False),
             invitation_expiry_days=cfg_app.get("invitation_expiry_days", 30),
             dry=args.dry,
@@ -256,7 +259,7 @@ def cli() -> None:
         group_name_uuid_cache: dict[str, str] = {}
 
         # Iterate all configured users
-        for user_dict in cfg_users.get("users", []):
+        for user_dict in cfg_users:
             user = User(
                 name=user_dict.get("name", ""),
                 email=user_dict.get("email", ""),
