@@ -256,7 +256,7 @@ def cli() -> None:
         group_name_uuid_cache: dict[str, str] = {}
 
         # Iterate all configured users
-        for user_dict in cfg_users.get("users", []):
+        for user_dict in cfg_users:
             user = User(
                 name=user_dict.get("name", ""),
                 email=user_dict.get("email", ""),
