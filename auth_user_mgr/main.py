@@ -225,7 +225,6 @@ def cli() -> None:
     configure_logger(verbose=args.verbose, debug=args.debug)
 
     if args.command == "sync":
-        # TODO: document users changes in config and README
         cfg_app, cfg_users = read_app_and_users_config(args.config, args.users)
 
         # Initiate classes
