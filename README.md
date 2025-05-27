@@ -74,7 +74,7 @@ auth-user-mgr <command> [options]
 Synchronize users with the Authentik instance:
 
 ```sh
-auth-user-mgr sync -c <config_file> -u <users_file>
+auth-user-mgr sync -c <config_file> -u <users_file_or_directory>
 ```
 
 For detailed help on any command with additional flags such as `--dry` and `--no-email`:
@@ -87,6 +87,11 @@ auth-user-mgr sync --help
 ### Configuration
 
 The application's configuration and the list of managed users are stored in YAML files. You can find sample configuration files in the [`config/`](./config/) directory.
+
+Note: There are two ways how to store your users inventory:
+
+1. In a single file, as shown in [`config/users.sample.yaml`](./config/users.sample.yaml)
+1. In multiple files in one directory, as shown in [`config/users.sample/`](./config/users.sample/)
 
 #### API permissions
 

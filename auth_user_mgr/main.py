@@ -36,7 +36,9 @@ parser_sync = subparsers.add_parser(
     "sync", parents=[common_flags], help="Synchronise users to the Authentik instance"
 )
 parser_sync.add_argument("-c", "--config", help="Path to app config file", required=True)
-parser_sync.add_argument("-u", "--users", help="Path to user inventory file", required=True)
+parser_sync.add_argument(
+    "-u", "--users", help="Path to user inventory file or directory", required=True
+)
 parser_sync.add_argument(
     "--dry",
     action="store_true",
@@ -223,6 +225,7 @@ def cli() -> None:
     configure_logger(verbose=args.verbose, debug=args.debug)
 
     if args.command == "sync":
+        # TODO: document users changes in config and README
         cfg_app, cfg_users = read_app_and_users_config(args.config, args.users)
 
         # Initiate classes

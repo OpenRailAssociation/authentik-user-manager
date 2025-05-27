@@ -1,0 +1,10 @@
+# Option 2 to store your users inventory: multiple files
+
+- name: Tester Testerson
+  email: tester@example.com
+  groups:
+    - Group 1
+    - Group 2
+
+- name: Jane Doe
+  email: jane@example.com

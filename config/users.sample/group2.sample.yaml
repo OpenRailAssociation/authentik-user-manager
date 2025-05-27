@@ -1,0 +1,4 @@
+# Option 2 to store your users inventory: multiple files
+
+- name: John Doe
+  email: john@example.net
