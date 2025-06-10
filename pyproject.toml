@@ -4,7 +4,7 @@
 
 [tool.poetry]
 name = "authentik-user-manager"
-version = "1.0.1"
+version = "1.0.2"
 description = "Managing Authentik users via YAML files"
 repository = "https://github.com/OpenRailAssociation/authentik-user-manager"
 keywords = ["authentik", "user-management"]
