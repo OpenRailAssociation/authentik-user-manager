@@ -42,7 +42,7 @@ class User:
         Returns:
             str: The username created by converting the user's name.
         """
-        return self.name.replace(" ", ".").lower()
+        return slugify(self.name, separator=".")
 
     def user_name_to_invite_slug(self) -> str:
         """Convert user name to an invitation slug.
