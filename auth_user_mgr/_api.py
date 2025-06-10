@@ -191,7 +191,7 @@ class AuthentikAPI:
         # Create an expiry time of now + by default 30 days
         expiry_time = datetime.now(timezone.utc) + timedelta(days=self.invitation_expiry_days)
         data = {
-            "name": user.invite_name,  # name if invitation
+            "name": user.invite_slug,  # name if invitation
             "expires": expiry_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             "single_use": False,
             "flow": self.flow_uuid if self.flow_uuid else None,
