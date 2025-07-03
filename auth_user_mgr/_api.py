@@ -15,7 +15,7 @@ from ._helpers import make_url, remove_path_from_url
 from ._user import User
 
 
-class AuthentikAPI:
+class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
     """Class for Authentik API and"""
 
     def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
@@ -23,8 +23,8 @@ class AuthentikAPI:
         url: str,
         token: str,
         invitation_flow_slug: str,
-        create_missing_groups: bool = False,
         invitation_expiry_days: int = 30,
+        create_missing_groups: bool = False,
         dry: bool = False,
     ):
         """Initialize the Authentik API client.
@@ -34,6 +34,8 @@ class AuthentikAPI:
             token (str): API token for authentication.
             invitation_flow_slug (str): Slug for the invitation flow.
             invitation_expiry_days (int, optional): Days the invitation is valid. Defaults to 30
+            create_missing_groups (bool, optional): If True, missing groups will be created.
+                Defaults to False
             dry (bool, optional): If True, non-GET API calls will not be executed. Defaults to False
         """
         self.url: str = url + "/api/v3"
@@ -43,8 +45,9 @@ class AuthentikAPI:
         }
         self.flow_slug: str = invitation_flow_slug
         self.flow_uuid: str = self.get_invitation_flow_uuid()
-        self.create_missing_groups: bool = create_missing_groups
+        self.open_invitations: None | list[dict] = None
         self.invitation_expiry_days: int = int(invitation_expiry_days)
+        self.create_missing_groups: bool = create_missing_groups
         self.dry: bool = dry
 
     def api_call(  # pylint: disable=too-many-positional-arguments, too-many-arguments
@@ -148,8 +151,8 @@ class AuthentikAPI:
         api_url = self.url + "/flows/instances/"
         return self.api_call(url=api_url, data=attributes, returns_list=True)
 
-    def list_invitations(self) -> list[dict]:
-        """List all open invitations"""
+    def get_all_open_invitations(self) -> list[dict]:
+        """Retrieve all open invitations"""
         api_url = self.url + "/stages/invitation/invitations/"
         return self.api_call(url=api_url, returns_list=True)
 
@@ -207,8 +210,10 @@ class AuthentikAPI:
 
     def get_pending_invitation_url_for_email(self, email: str) -> str:
         """Check if an email is part of a pending invitation, and return invitation URL"""
-        open_invitations = self.list_invitations()
-        for open_invitation in open_invitations:
+        # Only fetch open invitations once, if not already done
+        if self.open_invitations is None:
+            self.open_invitations = self.get_all_open_invitations()
+        for open_invitation in self.open_invitations:
             if open_invitation.get("fixed_data", {}).get("email", "") == email:
                 return self.get_invitation_link(open_invitation.get("pk", ""))
         return ""
