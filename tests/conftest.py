@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 DB Systel GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Fixtures for testing the auth_user_mgr package. This module provides fixtures to load sample
 configurations and create User objects for testing purposes
@@ -17,6 +21,7 @@ CONFIG_APP_SAMPLE = "tests/data/sample/app.sample.yaml"
 CONFIG_USERS_FILE_SAMPLE = "tests/data/sample/users.sample.yaml"
 CONFIG_USERS_DIR_SAMPLE = "tests/data/sample/users.sample"
 API_FIXTURE_DIR = Path("tests/data/api")
+
 
 @pytest.fixture(name="sample_configs_userfile")
 def fixture_sample_configs_userfile():
@@ -76,6 +81,7 @@ def fixture_sample_api() -> AuthentikAPI:
             dry=False,
         )
 
+
 @pytest.fixture(name="mock_api_call")
 def fixture_mock_api_call(monkeypatch):
     """
@@ -88,6 +94,7 @@ def fixture_mock_api_call(monkeypatch):
         function: A function that takes an HTTP method (e.g., "GET", "POST") and a fixture name,
         and returns a mock function that simulates the API call.
     """
+
     def _mock(method: str, fixture_name: str):
         response = MagicMock()
         response.status_code = 200

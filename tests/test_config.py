@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 DB Systel GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Test _config.py"""
 
 from pytest import raises
@@ -40,9 +44,8 @@ def test_app_config_missing_required_keys():
     Test reading application configuration with missing required keys.
     """
     with raises(KeyError):
-        read_app_and_users_config(
-            "tests/data/app.missing_required.yaml", CONFIG_USERS_DIR_SAMPLE
-        )
+        read_app_and_users_config("tests/data/app.missing_required.yaml", CONFIG_USERS_DIR_SAMPLE)
+
 
 def test_users_config_content(sample_configs_userfile):
     """
@@ -78,12 +81,11 @@ def test_users_file_and_dir_unequal(sample_configs_userfile):
     _, users_dir = read_app_and_users_config(CONFIG_APP_SAMPLE, CONFIG_USERS_DIR_UNEQUAL)
     assert users_file != users_dir
 
+
 def test_users_config_duplicates():
     """
     Test reading user configurations with duplicate emails.
     This should raise a ValueError due to the unique email constraint.
     """
     with raises(ValueError):
-        read_app_and_users_config(
-            CONFIG_APP_SAMPLE, "tests/data/users.duplicates.yaml"
-        )
+        read_app_and_users_config(CONFIG_APP_SAMPLE, "tests/data/users.duplicates.yaml")

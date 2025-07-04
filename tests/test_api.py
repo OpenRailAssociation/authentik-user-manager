@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 DB Systel GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Tests for _api.py"""
 
 from auth_user_mgr._api import AuthentikAPI
@@ -56,7 +60,7 @@ def test_get_invitation_link(sample_api: AuthentikAPI):
 def test_create_invitation(sample_api: AuthentikAPI, mock_api_call):
     """Test create_invitation creates an invitation and returns the link"""
     # Mock the POST invitation creation
-    sample_api.get_users = lambda **kwargs: [] # type: ignore[method-assign]
+    sample_api.get_users = lambda **kwargs: []  # type: ignore[method-assign]
     mock_post = mock_api_call("POST", "stages-invitatation-invitations-POST.json")
 
     # Prepare the user

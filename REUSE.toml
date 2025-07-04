@@ -1,6 +1,6 @@
 version = 1
 
 [[annotations]]
-path = "config/**.sample*"
+path = ["config/**.sample*", "tests/data/**"]
 SPDX-FileCopyrightText = "2025 DB Systel GmbH"
 SPDX-License-Identifier = "CC0-1.0"
