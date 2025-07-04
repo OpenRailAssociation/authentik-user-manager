@@ -9,6 +9,13 @@ from pathlib import Path
 
 import yaml
 
+REQUIRED_APP_KEYS = [
+    "authentik_url",
+    "authentik_token",
+    "authentik_title",
+    "invitation_flow_slug",
+]
+
 
 def get_yaml_file_paths(file_or_dir: str) -> list[Path]:
     """Get paths of YAML files from a directory or a single file"""
@@ -98,15 +105,7 @@ def read_app_and_users_config(
     users_config: list[dict] = read_yaml_config_files(user_config_path, unique_key="email")
 
     # Check if the configs contain all required keys
-    cfg_sanity_required_keys(
-        cfg=app_config,
-        required_keys=[
-            "authentik_url",
-            "authentik_token",
-            "authentik_title",
-            "invitation_flow_slug",
-        ],
-    )
+    cfg_sanity_required_keys(cfg=app_config, required_keys=REQUIRED_APP_KEYS)
     for user in users_config:
         cfg_sanity_required_keys(cfg=user, required_keys=["name", "email"])
 
