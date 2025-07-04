@@ -9,6 +9,13 @@ from pathlib import Path
 
 import yaml
 
+REQUIRED_APP_KEYS = [
+    "authentik_url",
+    "authentik_token",
+    "authentik_title",
+    "invitation_flow_slug",
+]
+
 
 def get_yaml_file_paths(file_or_dir: str) -> list[Path]:
     """Get paths of YAML files from a directory or a single file"""
@@ -64,6 +71,8 @@ def read_yaml_config_files(file_or_dir: str, unique_key: str = "") -> list[dict]
         # If we handle multiple files, check for conflicting unique keys
         if unique_key and isinstance(content, list):
             check_unique_key(content, seen_keys, unique_key, path)
+            # Sort the content by the unique key
+            content.sort(key=lambda x: x.get(unique_key, ""))
 
         # If the content is from a single file and not a list, wrap it in a list
         if len(yaml_file_paths) == 1:
@@ -71,6 +80,10 @@ def read_yaml_config_files(file_or_dir: str, unique_key: str = "") -> list[dict]
 
         # Otherwise, assume it's a list of dictionaries, and extend the output list
         cfg_output.extend(content)
+
+    # Sort the output list by the unique key if provided, again
+    if unique_key:
+        cfg_output.sort(key=lambda x: x.get(unique_key, ""))
 
     return cfg_output
 
@@ -92,15 +105,7 @@ def read_app_and_users_config(
     users_config: list[dict] = read_yaml_config_files(user_config_path, unique_key="email")
 
     # Check if the configs contain all required keys
-    cfg_sanity_required_keys(
-        cfg=app_config,
-        required_keys=[
-            "authentik_url",
-            "authentik_token",
-            "authentik_title",
-            "invitation_flow_slug",
-        ],
-    )
+    cfg_sanity_required_keys(cfg=app_config, required_keys=REQUIRED_APP_KEYS)
     for user in users_config:
         cfg_sanity_required_keys(cfg=user, required_keys=["name", "email"])
 

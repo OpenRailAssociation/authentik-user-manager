@@ -126,7 +126,11 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
     # --------------------------------------------------------------------------
 
     def list_users(self) -> list[dict]:
-        """List all users"""
+        """List all users
+
+        NOTE: This function does not support pagination, so it will only return the first page of
+        users (typically 100 users)
+        """
         api_url = self.url + "/core/users/"
         return self.api_call(url=api_url, returns_list=True)
 
