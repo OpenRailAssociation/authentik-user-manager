@@ -1,0 +1,54 @@
+{
+  "pagination": {
+    "next": 0,
+    "previous": 0,
+    "count": 1,
+    "current": 1,
+    "total_pages": 1,
+    "start_index": 1,
+    "end_index": 1
+  },
+  "results": [
+    {
+      "pk": 1,
+      "username": "tester.testerson",
+      "name": "Tester Testerson",
+      "is_active": true,
+      "last_login": "2025-06-11T07:23:30.298437Z",
+      "date_joined": "2025-05-20T15:18:31.842545Z",
+      "is_superuser": false,
+      "groups": [
+        "6e981209-8621-4484-993d-dc9882a8747c",
+        "ba911f0c-236f-420c-82d0-76503500061a"
+      ],
+      "groups_obj": [
+        {
+          "pk": "6e981209-8621-4484-993d-dc9882a8747c",
+          "num_pk": 14700,
+          "name": "Group 1",
+          "is_superuser": false,
+          "parent": null,
+          "parent_name": null,
+          "attributes": {}
+        },
+        {
+          "pk": "ba911f0c-236f-420c-82d0-76503500061a",
+          "num_pk": 24798,
+          "name": "Group 2",
+          "is_superuser": false,
+          "parent": null,
+          "parent_name": null,
+          "attributes": {}
+        }
+      ],
+      "email": "tester@example.com",
+      "avatar": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NHB4IiBoZWlnaHQ9IjY0cHgiIHZpZXdCb3g9IjAgMCA2NCA2NCIgdmVyc2lvbj0iMS4xIj48cmVjdCBmaWxsPSIjNjBjODM3IiBjeD0iMzIiIGN5PSIzMiIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByPSIzMiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBzdHlsZT0iY29sb3I6ICNmZmY7IGxpbmUtaGVpZ2h0OiAxOyBmb250LWZhbWlseTogJ1JlZEhhdFRleHQnLCdPdmVycGFzcycsb3ZlcnBhc3MsaGVsdmV0aWNhLGFyaWFsLHNhbnMtc2VyaWY7ICIgZmlsbD0iI2ZmZiIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMjgiIGZvbnQtd2VpZ2h0PSI0MDAiIGR5PSIuMWVtIj5UVDwvdGV4dD48L3N2Zz4=",
+      "attributes": {},
+      "uid": "b0b8ca53cdfa26d14c23367b881737bf5dd50c41bf9a02fbfde483e35572f6c6",
+      "path": "users",
+      "type": "internal",
+      "uuid": "d256b32c-fb23-4ac0-a791-6bd8b2dd5df7",
+      "password_change_date": "2025-06-11T07:23:28.554490Z"
+    }
+  ]
+}

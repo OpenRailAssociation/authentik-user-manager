@@ -3,8 +3,11 @@ Fixtures for testing the auth_user_mgr package. This module provides fixtures to
 configurations and create User objects for testing purposes
 """
 
+from unittest.mock import patch
+
 import pytest
 
+from auth_user_mgr._api import AuthentikAPI
 from auth_user_mgr._config import read_app_and_users_config
 from auth_user_mgr._user import User
 
@@ -54,3 +57,19 @@ def fixture_sample_users(sample_configs):
         User(name=u["name"], email=u["email"], configured_groups=u.get("groups", []))
         for u in users_config
     ]
+
+
+@pytest.fixture(name="sample_api")
+def fixture_sample_api() -> AuthentikAPI:
+    """Fixture to create a sample AuthentikAPI instance for testing"""
+
+    # Patch the get_flows method to avoid real HTTP call in constructor
+    with patch(
+        "auth_user_mgr._api.AuthentikAPI.get_flows", return_value=[{"pk": "fake-flow-uuid"}]
+    ):
+        return AuthentikAPI(
+            url="https://auth.example.com",
+            token="dummy-token",
+            invitation_flow_slug="default",
+            dry=False,
+        )
