@@ -1,6 +1,7 @@
 """Tests for _api.py"""
 
 from auth_user_mgr._api import AuthentikAPI
+from auth_user_mgr._user import User
 
 
 def test_list_users(sample_api: AuthentikAPI, mock_api_call):
@@ -37,3 +38,38 @@ def test_get_user_by_id(sample_api: AuthentikAPI, mock_api_call):
 
     mock_get.assert_called_once()
     assert "/core/users/3/" in mock_get.call_args[0][0]
+
+
+def test_get_invitation_link(sample_api: AuthentikAPI):
+    """Test get_invitation_link returns correct invitation link"""
+    # Example UUID
+    invitation_id = "abc123"
+
+    # Expect base URL without /api/v3
+    sample_api.url = "https://auth.example.com/api/v3"
+
+    link = sample_api.get_invitation_link(invitation_id)
+
+    assert link == "https://auth.example.com/if/flow/invitation-flow/?itoken=abc123"
+
+
+def test_create_invitation(sample_api: AuthentikAPI, mock_api_call):
+    """Test create_invitation creates an invitation and returns the link"""
+    # Mock the POST invitation creation
+    sample_api.get_users = lambda **kwargs: [] # type: ignore[method-assign]
+    mock_post = mock_api_call("POST", "stages-invitatation-invitations-POST.json")
+
+    # Prepare the user
+    user = User(name="Alice Test", email="alice@example.com", configured_groups=["Group A"])
+
+    # Call the method
+    invite_link = sample_api.create_invitation(user)
+
+    # Check the output
+    assert invite_link == "https://auth.example.com/if/flow/invitation-flow/?itoken=inv123"
+
+    # Check request was made once
+    mock_post.assert_called_once()
+    data = mock_post.call_args[1]["json"]
+    assert data["fixed_data"]["email"] == "alice@example.com"
+    assert data["flow"] == "fake-flow-uuid"

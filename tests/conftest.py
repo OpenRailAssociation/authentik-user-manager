@@ -72,7 +72,7 @@ def fixture_sample_api() -> AuthentikAPI:
         return AuthentikAPI(
             url="https://auth.example.com",
             token="dummy-token",
-            invitation_flow_slug="default",
+            invitation_flow_slug="invitation-flow",
             dry=False,
         )
 
