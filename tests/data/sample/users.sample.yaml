@@ -1,3 +1,5 @@
+# SAME FILE AS /config/users.sample.yaml
+
 # Option 1 to store your users inventory: single file
 
 - name: Tester Testerson
