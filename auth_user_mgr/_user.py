@@ -39,10 +39,27 @@ class User:
     def user_name_to_username(self) -> str:
         """Convert user name to a username.
 
+        This method uses the `slugify` function to convert the user's name into a username. It uses
+        dots as separators for spaces and special characters. It preserves hyphens in the name,
+        allowing for names like "John-William Doe-Testerson" to be converted correctly.
+
         Returns:
-            str: The username created by converting the user's name.
+            str: The username created by converting the user's name, with a maximum length of 150
+            characters
+
+        Examples:
+            - "Jane Doe" becomes "jane.doe"
+            - "Mårten Östlund" becomes "marten.ostlund"
+            - "John-William Doe-Testerson" becomes "john-william.doe-testerson"
         """
-        return slugify(self.name, separator=".")
+        # Pre-process: replace hyphens (as name combiners) with 'HYPHENHERE' to avoid conflicts with
+        # slugify
+        name_with_hyphens = self.name.replace("-", "HYPHENHERE")
+        # Use slugify to create a username, replacing spaces and special chars with dots. Keep case
+        # to enable replacement of 'HYPHENHERE' later.
+        name_sluggified = slugify(name_with_hyphens, separator=".", max_length=150, lowercase=False)
+        # Post-process: replace 'HYPHENHERE' back to hyphens, and convert to lowercase
+        return name_sluggified.replace("HYPHENHERE", "-").lower()
 
     def user_name_to_invite_slug(self) -> str:
         """Convert user name to an invitation slug.
