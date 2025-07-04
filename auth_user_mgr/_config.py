@@ -64,6 +64,8 @@ def read_yaml_config_files(file_or_dir: str, unique_key: str = "") -> list[dict]
         # If we handle multiple files, check for conflicting unique keys
         if unique_key and isinstance(content, list):
             check_unique_key(content, seen_keys, unique_key, path)
+            # Sort the content by the unique key
+            content.sort(key=lambda x: x.get(unique_key, ""))
 
         # If the content is from a single file and not a list, wrap it in a list
         if len(yaml_file_paths) == 1:
@@ -71,6 +73,10 @@ def read_yaml_config_files(file_or_dir: str, unique_key: str = "") -> list[dict]
 
         # Otherwise, assume it's a list of dictionaries, and extend the output list
         cfg_output.extend(content)
+
+    # Sort the output list by the unique key if provided, again
+    if unique_key:
+        cfg_output.sort(key=lambda x: x.get(unique_key, ""))
 
     return cfg_output
 
