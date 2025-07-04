@@ -3,10 +3,12 @@ Fixtures for testing the auth_user_mgr package. This module provides fixtures to
 configurations and create User objects for testing purposes
 """
 
-from unittest.mock import patch
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
+from auth_user_mgr import _api
 from auth_user_mgr._api import AuthentikAPI
 from auth_user_mgr._config import read_app_and_users_config
 from auth_user_mgr._user import User
@@ -14,7 +16,7 @@ from auth_user_mgr._user import User
 CONFIG_APP_SAMPLE = "tests/data/sample/app.sample.yaml"
 CONFIG_USERS_FILE_SAMPLE = "tests/data/sample/users.sample.yaml"
 CONFIG_USERS_DIR_SAMPLE = "tests/data/sample/users.sample"
-
+API_FIXTURE_DIR = Path("tests/data/api")
 
 @pytest.fixture(name="sample_configs_userfile")
 def fixture_sample_configs_userfile():
@@ -73,3 +75,27 @@ def fixture_sample_api() -> AuthentikAPI:
             invitation_flow_slug="default",
             dry=False,
         )
+
+@pytest.fixture(name="mock_api_call")
+def fixture_mock_api_call(monkeypatch):
+    """
+    Fixture to mock API calls in tests.
+    This fixture allows you to mock API calls by specifying the HTTP method and the fixture name
+    that contains the expected response.
+    Args:
+        monkeypatch: The pytest monkeypatch fixture to modify the behavior of the requests module.
+    Returns:
+        function: A function that takes an HTTP method (e.g., "GET", "POST") and a fixture name,
+        and returns a mock function that simulates the API call.
+    """
+    def _mock(method: str, fixture_name: str):
+        response = MagicMock()
+        response.status_code = 200
+        fixture_path = Path(API_FIXTURE_DIR) / fixture_name
+        response.text = fixture_path.read_text(encoding="utf-8")
+
+        mock_fn = MagicMock(return_value=response)
+        monkeypatch.setattr(_api.requests, method.lower(), mock_fn)
+        return mock_fn  # return it so you can assert on it
+
+    return _mock
