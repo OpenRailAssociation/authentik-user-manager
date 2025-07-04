@@ -84,6 +84,14 @@ jobs:
       - name: Test typing with mypy
         run: poetry run mypy
 
+  pytest:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: ./.github/actions/poetrybuild
+      - name: Test with pytest
+        run: poetry run pytest
+
   # REUSE
   reuse:
     runs-on: ubuntu-latest

@@ -1,0 +1,4 @@
+# authentik_url: "https://authentik.example.com"
+authentik_token: "ADMIN_API_TOKEN"
+authentik_title: "Your Org Userportal"
+# invitation_flow_slug: default-enrollment-flow

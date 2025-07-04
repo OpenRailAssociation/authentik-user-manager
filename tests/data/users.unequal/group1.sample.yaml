@@ -1,4 +1,4 @@
-# Option 1 to store your users inventory: single file
+# Option 2 to store your users inventory: multiple files
 
 - name: Tester Testerson
   email: tester@example.com
@@ -8,6 +8,3 @@
 
 - name: Jane Doe
   email: jane@example.com
-
-- name: John Doe
-  email: john@example.net

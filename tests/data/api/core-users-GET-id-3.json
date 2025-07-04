@@ -1,0 +1,19 @@
+{
+  "pk": 3,
+  "username": "john.doe",
+  "name": "John Doe",
+  "is_active": true,
+  "last_login": "2025-06-25T09:27:30.794735Z",
+  "date_joined": "2025-06-18T09:19:15.637452Z",
+  "is_superuser": false,
+  "groups": [],
+  "groups_obj": [],
+  "email": "john@example.net",
+  "avatar": "",
+  "attributes": {},
+  "uid": "d371385250f7e465ce1f3003587081e67cf00f1134d9907680ae9d150fa86d17",
+  "path": "users",
+  "type": "internal",
+  "uuid": "12c754bc-5b10-47af-9729-7d2c9c91560f",
+  "password_change_date": "2025-06-18T09:19:16.320475Z"
+}
