@@ -24,6 +24,8 @@ APP_CONFIG_SCHEMA = {
         "smtp_password": {"type": "string"},
         "smtp_starttls": {"type": "boolean"},
         "smtp_from": {"type": "string", "format": "email"},
+        "create_missing_groups": {"type": "boolean"},
+        "invitation_expiry_days": {"type": "integer"},
     },
     "required": [
         "authentik_url",
