@@ -19,6 +19,7 @@ pyyaml = "^6.0.2"
 requests = "^2.32.3"
 jinja2 = "^3.1.5"
 python-slugify = "^8.0.4"
+jsonschema = "^4.25.0"
 
 [tool.poetry.scripts]
 auth-user-mgr = "auth_user_mgr.main:cli"

@@ -43,8 +43,56 @@ def test_app_config_missing_required_keys():
     """
     Test reading application configuration with missing required keys.
     """
-    with raises(KeyError):
+    with raises(ValueError):
         read_app_and_users_config("tests/data/app.missing_required.yaml", CONFIG_USERS_DIR_SAMPLE)
+
+
+def test_app_config_wrong_types():
+    """
+    Test reading application configuration with wrong types.
+    """
+    with raises(ValueError):
+        read_app_and_users_config("tests/data/app.wrong_types.yaml", CONFIG_USERS_DIR_SAMPLE)
+
+
+def test_app_config_unexpected_key():
+    """
+    Test reading application configuration with unexpected properties.
+    """
+    with raises(ValueError):
+        read_app_and_users_config("tests/data/app.unexpected_keys.yaml", CONFIG_USERS_DIR_SAMPLE)
+
+
+def test_user_config_missing_required_keys():
+    """
+    Test reading user configuration with missing required keys.
+    """
+    with raises(ValueError):
+        read_app_and_users_config(CONFIG_APP_SAMPLE, "tests/data/users.missing_required.yaml")
+
+
+def test_user_config_unexpected_keys():
+    """
+    Test reading user configuration with unexpected properties.
+    """
+    with raises(ValueError):
+        read_app_and_users_config(CONFIG_APP_SAMPLE, "tests/data/users.unexpected_keys.yaml")
+
+
+def test_user_config_wrong_indentation():
+    """
+    Test reading user configuration with wrong indentation.
+    """
+    with raises(ValueError):
+        read_app_and_users_config(CONFIG_APP_SAMPLE, "tests/data/users.wrong_indent.yaml")
+
+
+def test_user_config_wrong_indentation_2():
+    """
+    Test reading user configuration with wrong indentation, causing yaml.safe_load() to fail.
+    """
+    with raises(RuntimeError):
+        read_app_and_users_config(CONFIG_APP_SAMPLE, "tests/data/users.wrong_indent2.yaml")
 
 
 def test_users_config_content(sample_configs_userfile):

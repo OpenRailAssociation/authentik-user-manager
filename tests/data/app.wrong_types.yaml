@@ -1,0 +1,12 @@
+authentik_url: "https://authentik.example.com"
+authentik_token: "ADMIN_API_TOKEN"
+authentik_title: "Your Org Userportal"
+invitation_flow_slug: default-enrollment-flow
+
+# SMTP configuration for sending emails
+smtp_server: smtp.example.com
+smtp_port: "587" # fail: not a string
+smtp_user: noreply@example.com
+smtp_password: "your-password"
+smtp_starttls: "true" # fail: not a boolean
+smtp_from: noreply # fail: not a valid email address
