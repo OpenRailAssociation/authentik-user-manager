@@ -3,12 +3,10 @@
 
 changelog:
   categories:
-    - title: Features and Fixes
-      labels:
-        - "*"
-      exclude:
-        labels:
-          - Renovate
     - title: Dependencies
       labels:
         - Renovate
+        - dependencies
+    - title: Features and Fixes
+      labels:
+        - "*"
