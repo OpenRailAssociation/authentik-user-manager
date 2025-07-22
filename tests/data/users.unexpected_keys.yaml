@@ -6,6 +6,4 @@
 
 - name: Jane Doe
   email: jane@example.com
-
-- name: John Doe
-  email: tester@example.com
+  unexpected_key: "This key is not expected"

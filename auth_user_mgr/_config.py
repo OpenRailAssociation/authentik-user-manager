@@ -8,13 +8,48 @@ import logging
 from pathlib import Path
 
 import yaml
+from jsonschema import FormatChecker, validate
+from jsonschema.exceptions import ValidationError
 
-REQUIRED_APP_KEYS = [
-    "authentik_url",
-    "authentik_token",
-    "authentik_title",
-    "invitation_flow_slug",
-]
+APP_CONFIG_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "authentik_url": {"type": "string", "format": "uri"},
+        "authentik_token": {"type": "string"},
+        "authentik_title": {"type": "string"},
+        "invitation_flow_slug": {"type": "string"},
+        "smtp_server": {"type": "string"},
+        "smtp_port": {"type": "integer"},
+        "smtp_user": {"type": "string"},
+        "smtp_password": {"type": "string"},
+        "smtp_starttls": {"type": "boolean"},
+        "smtp_from": {"type": "string", "format": "email"},
+    },
+    "required": [
+        "authentik_url",
+        "authentik_token",
+        "authentik_title",
+        "invitation_flow_slug",
+    ],
+    "additionalProperties": False,
+}
+
+USER_CONFIG_SCHEMA = {
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "name": {"type": "string"},
+            "email": {"type": "string", "format": "email"},
+            "groups": {
+                "type": "array",
+                "items": {"type": "string"},
+            },
+        },
+        "required": ["name", "email"],
+        "additionalProperties": False,
+    },
+}
 
 
 def get_yaml_file_paths(file_or_dir: str) -> list[Path]:
@@ -88,12 +123,14 @@ def read_yaml_config_files(file_or_dir: str, unique_key: str = "") -> list[dict]
     return cfg_output
 
 
-def cfg_sanity_required_keys(cfg: dict, required_keys: list[str]) -> None:
-    """Check if the config contains all required keys"""
-    missing_keys = [key for key in required_keys if key not in cfg]
-    if missing_keys:
-        raise KeyError(f"Config {cfg} is missing required keys: {', '.join(missing_keys)}")
-    logging.debug("Config contains all required keys: %s", required_keys)
+def validate_config_schema(cfg: dict | list[dict], schema: dict) -> None:
+    """Validate the config against a JSON schema"""
+    try:
+        validate(instance=cfg, schema=schema, format_checker=FormatChecker())
+    except ValidationError as e:
+        logging.critical("Config validation failed: %s", e.message)
+        raise ValueError(e) from None
+    logging.debug("Config validated successfully against schema.")
 
 
 def read_app_and_users_config(
@@ -104,9 +141,8 @@ def read_app_and_users_config(
     app_config: dict = read_yaml_config_files(app_config_path)[0]  # is always a single file
     users_config: list[dict] = read_yaml_config_files(user_config_path, unique_key="email")
 
-    # Check if the configs contain all required keys
-    cfg_sanity_required_keys(cfg=app_config, required_keys=REQUIRED_APP_KEYS)
-    for user in users_config:
-        cfg_sanity_required_keys(cfg=user, required_keys=["name", "email"])
+    # Validate the configs against their schemas and required keys
+    validate_config_schema(cfg=app_config, schema=APP_CONFIG_SCHEMA)
+    validate_config_schema(cfg=users_config, schema=USER_CONFIG_SCHEMA)
 
     return app_config, users_config

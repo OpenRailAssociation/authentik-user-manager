@@ -1,0 +1,8 @@
+# Wrong indentation in YAML file
+- name: User One
+  email: user1@example.com
+  groups:
+  - Test Group
+
+  - name: User Two
+  email: user2@example.com

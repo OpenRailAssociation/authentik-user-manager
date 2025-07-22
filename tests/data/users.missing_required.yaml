@@ -7,5 +7,4 @@
 - name: Jane Doe
   email: jane@example.com
 
-- name: John Doe
-  email: tester@example.com
+- email: john@example.com
