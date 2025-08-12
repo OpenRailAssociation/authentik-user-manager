@@ -3,5 +3,4 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["github>OpenRailAssociation/renovate-config"],
-  "dependencyDashboardHeader": "> [!NOTE]<br>This issue is automatically generated and updated by Renovate to show the status of dependencies in this repository. Please do not edit or close this issue. If you are using Renovate as the hosted app, you may also check the status and trigger actions in the [Mend.io Web Portal](https://developer.mend.io).",
 }
