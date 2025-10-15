@@ -25,9 +25,9 @@ jsonschema = "^4.25.0"
 auth-user-mgr = "auth_user_mgr.main:cli"
 
 [tool.poetry.group.dev.dependencies]
-isort = "^6.0.0"
+isort = "^7.0.0"
 mypy = "^1.15.0"
-pylint = "^3.3.4"
+pylint = "^4.0.0"
 black = "^25.1.0"
 types-requests = "^2.32.0.20241016"
 bump-my-version = "^1.1.2"
