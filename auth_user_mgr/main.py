@@ -74,20 +74,30 @@ def configure_logger(verbose: bool = False, debug: bool = False) -> logging.Logg
     return log
 
 
-def get_groups_of_users(api: AuthentikAPI) -> dict[int, list[str]]:
-    """Build a mapping of user IDs to their current group memberships.
+def get_groups_of_users(
+    api: AuthentikAPI,
+) -> tuple[dict[int, list[str]], dict[str, str]]:
+    """Build a mapping of user IDs to their current group memberships and a group name-to-UUID
+    cache.
 
     Args:
         api (AuthentikAPI): Authentik API client instance.
 
     Returns:
-        dict[int, list[str]]: A dictionary mapping user IDs to sorted lists of group names that the
-            user belongs to.
+        tuple: A tuple containing:
+            - dict[int, list[str]]: A dictionary mapping user IDs to sorted lists of group names
+                that the user belongs to.
+            - dict[str, str]: A dictionary mapping group names to their UUIDs.
     """
     users_groups_mapping: dict[int, list[str]] = {}
+    group_name_uuid_cache: dict[str, str] = {}
     for group_dict in api.list_groups():
         group_name = group_dict.get("name", "")
+        group_uuid = str(group_dict.get("pk", ""))
         logging.debug("Processing screen of members of group %s", group_name)
+        # Cache group name to UUID mapping
+        if group_name and group_uuid:
+            group_name_uuid_cache[group_name] = group_uuid
         # Iterate all members of this group
         for user_id in group_dict.get("users", []):
             # Initialise list of group names if not present, otherwise add to it
@@ -100,11 +110,15 @@ def get_groups_of_users(api: AuthentikAPI) -> dict[int, list[str]]:
     for user_id, groups in users_groups_mapping.items():
         users_groups_mapping[user_id] = sorted(groups)
 
-    return users_groups_mapping
+    return users_groups_mapping, group_name_uuid_cache
 
 
 def user_check_existence(
-    api: AuthentikAPI, user: User, mail: Mail, invitation_template: str = ""
+    api: AuthentikAPI,
+    user: User,
+    mail: Mail,
+    all_users_by_email: dict[str, dict],
+    invitation_template: str = "",
 ) -> bool:
     """Check if a user exists in Authentik and handle invitations accordingly.
 
@@ -115,6 +129,8 @@ def user_check_existence(
         api (AuthentikAPI): Authentik API client instance.
         user (User): User object containing email and other user details.
         mail (Mail): Mail object for sending invitations.
+        all_users_by_email (dict[str, dict]): Pre-fetched mapping of email addresses to user dicts
+            from Authentik, used to avoid per-user API calls.
         invitation_template (str, optional): Path to a custom invitation template file.
             Defaults to an empty string in which case the inbuilt template is used.
 
@@ -122,11 +138,11 @@ def user_check_existence(
         bool: True if user exists, False if user needs to be invited.
     """
     logging.info("Processing user %s", user.email)
-    user_exists = api.get_users(email=user.email)
+    user_exists = all_users_by_email.get(user.email)
     # CHeck if user already exists
     if user_exists:
         # Add user ID
-        user.id = user_exists[0].get("pk", 0)
+        user.id = user_exists.get("pk", 0)
 
         print(f"User {user.email} already exists (ID: {user.id})")
 
@@ -250,11 +266,13 @@ def cli() -> None:
             instance_title=cfg_app.get("authentik_title", ""),
         )
 
-        # Get all current groups and their users
-        users_and_groups = get_groups_of_users(api=api)
+        # Get all current groups and their users, plus group name-to-uuid cache
+        users_and_groups, group_name_uuid_cache = get_groups_of_users(api=api)
 
-        # Create a cache for group name-to-uuid mappings
-        group_name_uuid_cache: dict[str, str] = {}
+        # Fetch all users from Authentik upfront and build email lookup
+        all_users_by_email: dict[str, dict] = {
+            u["email"]: u for u in api.list_users() if u.get("email")
+        }
 
         # Iterate all configured users
         for user_dict in cfg_users:
@@ -264,7 +282,9 @@ def cli() -> None:
                 configured_groups=user_dict.get("groups", []),
             )
             # Check if user exists. If not invite them.
-            if user_check_existence(api=api, user=user, mail=mail):
+            if user_check_existence(
+                api=api, user=user, mail=mail, all_users_by_email=all_users_by_email
+            ):
                 user_check_group_memberships(
                     api=api,
                     user=user,

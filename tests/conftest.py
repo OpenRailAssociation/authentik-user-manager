@@ -109,3 +109,33 @@ def fixture_mock_api_call(monkeypatch) -> callable:
         return mock_fn  # return it so you can assert on it
 
     return _mock
+
+
+@pytest.fixture(name="mock_api_call_paginated")
+def fixture_mock_api_call_paginated(monkeypatch) -> callable:
+    """
+    Fixture to mock paginated API calls. Returns different fixture files for each successive call,
+    simulating multiple pages.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        function: A function that takes an HTTP method and a list of fixture names (one per page),
+        and returns the mock function.
+    """
+
+    def _mock(method: str, fixture_names: list[str]) -> MagicMock:
+        responses = []
+        for fixture_name in fixture_names:
+            response = MagicMock()
+            response.status_code = 200
+            fixture_path = Path(API_FIXTURE_DIR) / fixture_name
+            response.text = fixture_path.read_text(encoding="utf-8")
+            responses.append(response)
+
+        mock_fn = MagicMock(side_effect=responses)
+        monkeypatch.setattr(_api.requests, method.lower(), mock_fn)
+        return mock_fn
+
+    return _mock
