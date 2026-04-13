@@ -25,6 +25,7 @@ APP_CONFIG_SCHEMA = {
         "smtp_starttls": {"type": "boolean"},
         "smtp_from": {"type": "string", "format": "email"},
         "create_missing_groups": {"type": "boolean"},
+        "delete_unconfigured_users": {"type": "boolean"},
         "invitation_expiry_days": {"type": "integer"},
     },
     "required": [

@@ -142,6 +142,7 @@ def fixture_mock_api_call_paginated(monkeypatch) -> callable:
 
     return _mock
 
+
 @pytest.fixture(name="mock_mail")
 def fixture_mock_mail() -> MagicMock:
     """Fixture to create a mock Mail instance."""

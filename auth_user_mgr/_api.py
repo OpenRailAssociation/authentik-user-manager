@@ -189,6 +189,11 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
         api_url = self.url + "/core/users/" + str(user_id) + "/"
         return self.api_call(url=api_url)
 
+    def delete_user(self, user_id: int) -> None:
+        """Delete a user by their ID ('pk' key in user dict)."""
+        api_url = self.url + "/core/users/" + str(user_id) + "/"
+        self.api_call(url=api_url, method="DELETE")
+
     # --------------------------------------------------------------------------
     # INVITATIONS
     # --------------------------------------------------------------------------
