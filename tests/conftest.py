@@ -15,7 +15,9 @@ import pytest
 from auth_user_mgr import _api
 from auth_user_mgr._api import AuthentikAPI
 from auth_user_mgr._config import read_app_and_users_config
+from auth_user_mgr._email import Mail
 from auth_user_mgr._user import User
+from auth_user_mgr.main import UserSync
 
 CONFIG_APP_SAMPLE = "tests/data/sample/app.sample.yaml"
 CONFIG_USERS_FILE_SAMPLE = "tests/data/sample/users.sample.yaml"
@@ -109,3 +111,63 @@ def fixture_mock_api_call(monkeypatch) -> callable:
         return mock_fn  # return it so you can assert on it
 
     return _mock
+
+
+@pytest.fixture(name="mock_api_call_paginated")
+def fixture_mock_api_call_paginated(monkeypatch) -> callable:
+    """
+    Fixture to mock paginated API calls. Returns different fixture files for each successive call,
+    simulating multiple pages.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        function: A function that takes an HTTP method and a list of fixture names (one per page),
+        and returns the mock function.
+    """
+
+    def _mock(method: str, fixture_names: list[str]) -> MagicMock:
+        responses = []
+        for fixture_name in fixture_names:
+            response = MagicMock()
+            response.status_code = 200
+            fixture_path = Path(API_FIXTURE_DIR) / fixture_name
+            response.text = fixture_path.read_text(encoding="utf-8")
+            responses.append(response)
+
+        mock_fn = MagicMock(side_effect=responses)
+        monkeypatch.setattr(_api.requests, method.lower(), mock_fn)
+        return mock_fn
+
+    return _mock
+
+@pytest.fixture(name="mock_mail")
+def fixture_mock_mail() -> MagicMock:
+    """Fixture to create a mock Mail instance."""
+    return MagicMock(spec=Mail)
+
+
+@pytest.fixture(name="sample_sync")
+def fixture_sample_sync(sample_api: AuthentikAPI, mock_mail: MagicMock) -> UserSync:
+    """Fixture to create a UserSync instance with pre-populated data."""
+    all_users_by_email = {
+        "tester@example.com": {"pk": 1, "email": "tester@example.com"},
+        "jane@example.com": {"pk": 2, "email": "jane@example.com"},
+    }
+    user_group_mapping = {
+        1: ["Group 1", "Group 2"],
+        2: [],
+    }
+    group_name_uuid_cache = {
+        "Group 1": "uuid-group-1",
+        "Group 2": "uuid-group-2",
+        "Group 3": "uuid-group-3",
+    }
+    return UserSync(
+        api=sample_api,
+        mail=mock_mail,
+        all_users_by_email=all_users_by_email,
+        user_group_mapping=user_group_mapping,
+        group_name_uuid_cache=group_name_uuid_cache,
+    )

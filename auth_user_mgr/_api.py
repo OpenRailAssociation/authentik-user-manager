@@ -50,14 +50,13 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
         self.create_missing_groups: bool = create_missing_groups
         self.dry: bool = dry
 
-    def api_call(  # noqa: ANN202, C901
+    def _api_request(
         self,
         url: str,
         method: str = "GET",
         data: dict | None = None,
-        returns_list: bool = False,
-    ):
-        """Make an API call to Authentik.
+    ) -> dict:
+        """Make a single API request to Authentik and return the parsed response.
 
         Args:
             url (str): The URL to make the API call to.
@@ -67,13 +66,9 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
 
             data (dict, optional): The data to send with the API call. Defaults to None.
 
-            returns_list (bool, optional): Whether the API response should be returned as a list.
-                Defaults to False.
-
         Returns:
-            response (dict | list): The response from the API call, parsed as a dictionary.
-                If `returns_list` is True, a list of dictionaries is returned.
-                    If `self.dry` is True and method is not GET, an empty dictionary is returned.
+            response (dict): The response from the API call, parsed as a dictionary.
+                If `self.dry` is True and method is not GET, an empty dictionary is returned.
 
         Raises:
             ValueError: If an invalid HTTP method is provided.
@@ -86,8 +81,6 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
             # In dry run, do not execute non-GET calls but return empty dict
             if self.dry:
                 logging.info("Dry run, not executing the above API call")
-                if returns_list:
-                    return [{}]
                 return {}
 
             if method == "POST":
@@ -117,22 +110,70 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
             logging.debug("API response is not valid JSON: %s", response.text)
             return {}
         else:
-            if returns_list:
-                logging.debug("API response pagination: %s", result.get("pagination", {}))
-                list_result: list[dict] = result.get("results", [])
-                return list_result
             return result
+
+    def api_call(  # noqa: ANN202
+        self,
+        url: str,
+        method: str = "GET",
+        data: dict | None = None,
+        returns_list: bool = False,
+    ):
+        """Make an API call to Authentik, with automatic pagination for list endpoints.
+
+        Args:
+            url (str): The URL to make the API call to.
+
+            method (str, optional): The HTTP method to use for the API call. Defaults to "GET".
+                Valid values are "GET", "POST", "PATCH", and "DELETE".
+
+            data (dict, optional): The data to send with the API call. Defaults to None.
+
+            returns_list (bool, optional): Whether the API response should be returned as a list.
+                If True, automatically paginates through all pages. Defaults to False.
+
+        Returns:
+            response (dict | list): The response from the API call, parsed as a dictionary.
+                If `returns_list` is True, a list of dictionaries is returned (all pages combined).
+                If `self.dry` is True and method is not GET, an empty dict/list is returned.
+
+        Raises:
+            ValueError: If an invalid HTTP method is provided.
+        """
+        if not returns_list:
+            return self._api_request(url=url, method=method, data=data)
+
+        # For non-GET dry runs returning lists, return early
+        if method != "GET" and self.dry:
+            return [{}]
+
+        # Paginate through all pages for list endpoints
+        all_results: list[dict] = []
+        page = 1
+        page_size = 500
+        while True:
+            paginated_data = dict(data) if data else {}
+            paginated_data["page_size"] = page_size
+            paginated_data["page"] = page
+
+            result = self._api_request(url=url, method=method, data=paginated_data)
+            logging.debug("API response pagination: %s", result.get("pagination", {}))
+            all_results.extend(result.get("results", []))
+
+            pagination = result.get("pagination", {})
+            total_pages = pagination.get("total_pages", 1)
+            if page >= total_pages:
+                break
+            page += 1
+
+        return all_results
 
     # --------------------------------------------------------------------------
     # USERS
     # --------------------------------------------------------------------------
 
     def list_users(self) -> list[dict]:
-        """List all users.
-
-        NOTE: This function does not support pagination, so it will only return the first page of
-        users (typically 100 users)
-        """
+        """List all users with automatic pagination."""
         api_url = self.url + "/core/users/"
         return self.api_call(url=api_url, returns_list=True)
 

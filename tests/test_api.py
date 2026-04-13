@@ -14,11 +14,31 @@ def test_list_users(sample_api: AuthentikAPI, mock_api_call: callable) -> None:
     users = sample_api.list_users()
 
     assert isinstance(users, list)
+    assert len(users) == 3
     assert users[0]["email"] == "tester@example.com"
     assert users[0]["groups"] == [
         "6e981209-8621-4484-993d-dc9882a8747c",
         "ba911f0c-236f-420c-82d0-76503500061a",
     ]
+
+
+def test_list_users_pagination(
+    sample_api: AuthentikAPI, mock_api_call_paginated: callable
+) -> None:
+    """Test that list_users paginates through multiple pages."""
+    mock_get = mock_api_call_paginated(
+        "GET", ["core-users-GET-page1.json", "core-users-GET-page2.json"]
+    )
+    users = sample_api.list_users()
+
+    assert isinstance(users, list)
+    assert len(users) == 4
+    assert users[0]["email"] == "tester@example.com"
+    assert users[1]["email"] == "jane@example.com"
+    assert users[2]["email"] == "john@example.net"
+    assert users[3]["email"] == "alice@example.com"
+    # Should have been called twice (one per page)
+    assert mock_get.call_count == 2
 
 
 def test_get_users_with_filter(sample_api: AuthentikAPI, mock_api_call: callable) -> None:

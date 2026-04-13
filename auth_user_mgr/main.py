@@ -74,20 +74,30 @@ def configure_logger(verbose: bool = False, debug: bool = False) -> logging.Logg
     return log
 
 
-def get_groups_of_users(api: AuthentikAPI) -> dict[int, list[str]]:
-    """Build a mapping of user IDs to their current group memberships.
+def get_groups_of_users(
+    api: AuthentikAPI,
+) -> tuple[dict[int, list[str]], dict[str, str]]:
+    """Build a mapping of user IDs to their current group memberships and a group name-to-UUID
+    cache.
 
     Args:
         api (AuthentikAPI): Authentik API client instance.
 
     Returns:
-        dict[int, list[str]]: A dictionary mapping user IDs to sorted lists of group names that the
-            user belongs to.
+        tuple: A tuple containing:
+            - dict[int, list[str]]: A dictionary mapping user IDs to sorted lists of group names
+                that the user belongs to.
+            - dict[str, str]: A dictionary mapping group names to their UUIDs.
     """
     users_groups_mapping: dict[int, list[str]] = {}
+    group_name_uuid_cache: dict[str, str] = {}
     for group_dict in api.list_groups():
         group_name = group_dict.get("name", "")
+        group_uuid = str(group_dict.get("pk", ""))
         logging.debug("Processing screen of members of group %s", group_name)
+        # Cache group name to UUID mapping
+        if group_name and group_uuid:
+            group_name_uuid_cache[group_name] = group_uuid
         # Iterate all members of this group
         for user_id in group_dict.get("users", []):
             # Initialise list of group names if not present, otherwise add to it
@@ -100,114 +110,176 @@ def get_groups_of_users(api: AuthentikAPI) -> dict[int, list[str]]:
     for user_id, groups in users_groups_mapping.items():
         users_groups_mapping[user_id] = sorted(groups)
 
-    return users_groups_mapping
+    return users_groups_mapping, group_name_uuid_cache
 
 
-def user_check_existence(
-    api: AuthentikAPI, user: User, mail: Mail, invitation_template: str = ""
-) -> bool:
-    """Check if a user exists in Authentik and handle invitations accordingly.
+class UserSync:
+    """Orchestrates user synchronization and tracks sync statistics."""
 
-    This function checks if a user exists, and if not, manages the invitation process.
-    It also cleans up any pending invitations for existing users.
+    def __init__(
+        self,
+        api: AuthentikAPI,
+        mail: Mail,
+        all_users_by_email: dict[str, dict],
+        user_group_mapping: dict[int, list[str]],
+        group_name_uuid_cache: dict[str, str],
+    ) -> None:
+        """Initialize UserSync with API clients, pre-fetched data, and empty stats."""
+        self.api = api
+        self.mail = mail
+        self.all_users_by_email = all_users_by_email
+        self.user_group_mapping = user_group_mapping
+        self.group_name_uuid_cache = group_name_uuid_cache
 
-    Args:
-        api (AuthentikAPI): Authentik API client instance.
-        user (User): User object containing email and other user details.
-        mail (Mail): Mail object for sending invitations.
-        invitation_template (str, optional): Path to a custom invitation template file.
-            Defaults to an empty string in which case the inbuilt template is used.
+        # Stats
+        self.users_unchanged: int = 0
+        self.users_changed: int = 0
+        self.users_pending: int = 0
+        self.detail_messages: list[str] = []
 
-    Returns:
-        bool: True if user exists, False if user needs to be invited.
-    """
-    logging.info("Processing user %s", user.email)
-    user_exists = api.get_users(email=user.email)
-    # CHeck if user already exists
-    if user_exists:
-        # Add user ID
-        user.id = user_exists[0].get("pk", 0)
+    def sync_user(self, user: User, invitation_template: str = "") -> None:
+        """Synchronize a single user: check existence, handle invitations, sync groups.
 
-        print(f"User {user.email} already exists (ID: {user.id})")
+        Args:
+            user (User): User object to synchronize.
+            invitation_template (str, optional): Path to a custom invitation template file.
+                Defaults to an empty string in which case the inbuilt template is used.
+        """
+        if self.check_user_existence(user=user, invitation_template=invitation_template):
+            if self.check_group_memberships(user=user):
+                self.users_changed += 1
+            else:
+                self.users_unchanged += 1
+        else:
+            self.users_pending += 1
 
-        # Check if user still has an still an invitation pending
-        if invite_uuid := api.get_pending_invitation_uuid_for_email(user.email):
-            print(f"User {user.email} is still pending invitation: {invite_uuid}")
-            # Delete invitation
-            api.delete_invitation(invitation_uuid=invite_uuid)
-            print(f"User {user.email} invitation deleted: {invite_uuid}")
+    def check_user_existence(self, user: User, invitation_template: str = "") -> bool:
+        """Check if a user exists in Authentik and handle invitations accordingly.
 
-        return True
+        This method checks if a user exists, and if not, manages the invitation process.
+        It also cleans up any pending invitations for existing users.
 
-    # Check if user is pending invitation. If not, create invitation
-    if invite_url := api.get_pending_invitation_url_for_email(user.email):
-        print(f"User {user.email} is pending invitation: {invite_url}")
-    else:
-        invitation_url = api.create_invitation(user=user)
-        mail.send_email(
-            recipient=user.email,
-            message="invitation",
-            template_file=invitation_template,
-            link=invitation_url,
-            invitation_expiry_days=api.invitation_expiry_days,
+        Args:
+            user (User): User object containing email and other user details.
+            invitation_template (str, optional): Path to a custom invitation template file.
+                Defaults to an empty string in which case the inbuilt template is used.
+
+        Returns:
+            bool: True if user exists, False if user needs to be invited.
+        """
+        logging.debug("Processing user %s", user.email)
+        user_exists = self.all_users_by_email.get(user.email)
+        # Check if user already exists
+        if user_exists:
+            # Add user ID
+            user.id = user_exists.get("pk", 0)
+
+            logging.info("User %s already exists (ID: %s)", user.email, user.id)
+
+            # Check if user still has an still an invitation pending
+            if invite_uuid := self.api.get_pending_invitation_uuid_for_email(user.email):
+                logging.info(
+                    "User %s has a pending invitation (UUID: %s) which will be deleted",
+                    user.email,
+                    invite_uuid,
+                )
+                self.detail_messages.append(
+                    f"{user.email}: deleting stale invitation {invite_uuid}"
+                )
+                # Delete invitation
+                self.api.delete_invitation(invitation_uuid=invite_uuid)
+
+            return True
+
+        # Check if user is pending invitation. If not, create invitation
+        if invite_url := self.api.get_pending_invitation_url_for_email(user.email):
+            self.detail_messages.append(f"{user.email}: pending invitation: {invite_url}")
+        else:
+            invitation_url = self.api.create_invitation(user=user)
+            logging.info(
+                "User %s does not exist and will be invited: %s", user.email, invitation_url
+            )
+            self.mail.send_email(
+                recipient=user.email,
+                message="invitation",
+                template_file=invitation_template,
+                link=invitation_url,
+                invitation_expiry_days=self.api.invitation_expiry_days,
+            )
+            self.detail_messages.append(
+                f"{user.email}: invitation created and sent: {invitation_url}"
+            )
+
+        return False
+
+    def check_group_memberships(self, user: User) -> bool:
+        """Compare and synchronize a user's configured and current group memberships.
+
+        This method compares the user's configured group memberships with their current status
+        and makes the necessary adjustments by adding or removing the user from groups.
+
+        Args:
+            user (User): User object containing current and configured group memberships.
+
+        Returns:
+            bool: True if any group membership changes were made, False otherwise.
+        """
+        # Compare configured group memberships with current status
+        user.current_groups = self.user_group_mapping.get(user.id, [])
+
+        # Compare configured and current group memberships
+        delete_from_groups, in_sync, add_to_groups = compare_two_lists(
+            user.configured_groups, user.current_groups
         )
-        print(f"Invitation created for and sent to {user.email}: {invitation_url}")
+        logging.debug(
+            "User %s: %s",
+            user.email,
+            {
+                "delete_from_groups": delete_from_groups,
+                "in_sync": in_sync,
+                "add_to_groups": add_to_groups,
+            },
+        )
 
-    return False
+        # Track whether any changes were made
+        has_changes = bool(delete_from_groups or add_to_groups)
 
+        # Delete user from groups
+        for group in delete_from_groups:
+            if group not in self.group_name_uuid_cache:
+                self.group_name_uuid_cache[group] = self.api.get_group_uuid_by_name(group)
+            logging.info("User %s will be removed from group '%s'", user.email, group)
+            self.api.delete_user_from_group(
+                user_id=user.id, group_uuid=self.group_name_uuid_cache[group]
+            )
+            self.detail_messages.append(f"{user.email}: removed from group '{group}'")
 
-def user_check_group_memberships(
-    api: AuthentikAPI,
-    user: User,
-    user_group_mapping: dict[int, list[str]],
-    group_name_uuid_cache: dict[str, str],
-) -> None:
-    """Compare and synchronize a user's configured and current group memberships.
+        # Add user to groups
+        for group in add_to_groups:
+            if group not in self.group_name_uuid_cache:
+                self.group_name_uuid_cache[group] = self.api.get_group_uuid_by_name(group)
+            logging.info("User %s will be added to group '%s'", user.email, group)
+            self.api.add_user_to_group(
+                user_id=user.id, group_uuid=self.group_name_uuid_cache[group]
+            )
+            self.detail_messages.append(f"{user.email}: added to group '{group}'")
 
-    This function compares the user's configured group memberships with their current status
-    and makes the necessary adjustments by adding or removing the user from groups.
+        return has_changes
 
-    Args:
-        api (AuthentikAPI): Authentik API client instance.
-        user (User): User object containing current and configured group memberships.
-        user_group_mapping (dict[int, list[str]]): Mapping of user IDs to their current
-            group memberships.
-        group_name_uuid_cache (dict[str, str]): Cache of group names to their UUIDs for
-            efficient lookups.
+    def print_summary(self, total_users: int) -> None:
+        """Print sync summary and detail messages.
 
-    Returns:
-        None
-    """
-    # Compare configured group memberships with current status
-    user.current_groups = user_group_mapping.get(user.id, [])
-
-    # Compare configured and current group memberships
-    delete_from_groups, in_sync, add_to_groups = compare_two_lists(
-        user.configured_groups, user.current_groups
-    )
-    logging.info(
-        "User %s: %s",
-        user.email,
-        {
-            "delete_from_groups": delete_from_groups,
-            "in_sync": in_sync,
-            "add_to_groups": add_to_groups,
-        },
-    )
-
-    # Delete user from groups
-    for group in delete_from_groups:
-        if group not in group_name_uuid_cache:
-            group_name_uuid_cache[group] = api.get_group_uuid_by_name(group)
-        api.delete_user_from_group(user_id=user.id, group_uuid=group_name_uuid_cache[group])
-        print(f"User {user.email} removed from group {group}")
-
-    # Add user to groups
-    for group in add_to_groups:
-        if group not in group_name_uuid_cache:
-            group_name_uuid_cache[group] = api.get_group_uuid_by_name(group)
-        api.add_user_to_group(user_id=user.id, group_uuid=group_name_uuid_cache[group])
-        print(f"User {user.email} added to group {group}")
+        Args:
+            total_users (int): Total number of configured users processed.
+        """
+        print(f"Sync summary: {total_users} users processed")
+        print(f"  Unchanged: {self.users_unchanged}")
+        print(f"  Changed:   {self.users_changed}")
+        print(f"  Pending:   {self.users_pending}")
+        if self.detail_messages:
+            print("\nDetails:")
+            for msg in self.detail_messages:
+                print(f"  {msg}")
 
 
 def cli() -> None:
@@ -250,11 +322,22 @@ def cli() -> None:
             instance_title=cfg_app.get("authentik_title", ""),
         )
 
-        # Get all current groups and their users
-        users_and_groups = get_groups_of_users(api=api)
+        # Get all current groups and their users, plus group name-to-uuid cache
+        users_and_groups, group_name_uuid_cache = get_groups_of_users(api=api)
 
-        # Create a cache for group name-to-uuid mappings
-        group_name_uuid_cache: dict[str, str] = {}
+        # Fetch all users from Authentik upfront and build email lookup
+        all_users_by_email: dict[str, dict] = {
+            u["email"]: u for u in api.list_users() if u.get("email")
+        }
+
+        # Initialize sync orchestrator
+        sync = UserSync(
+            api=api,
+            mail=mail,
+            all_users_by_email=all_users_by_email,
+            user_group_mapping=users_and_groups,
+            group_name_uuid_cache=group_name_uuid_cache,
+        )
 
         # Iterate all configured users
         for user_dict in cfg_users:
@@ -263,14 +346,9 @@ def cli() -> None:
                 email=user_dict.get("email", ""),
                 configured_groups=user_dict.get("groups", []),
             )
-            # Check if user exists. If not invite them.
-            if user_check_existence(api=api, user=user, mail=mail):
-                user_check_group_memberships(
-                    api=api,
-                    user=user,
-                    user_group_mapping=users_and_groups,
-                    group_name_uuid_cache=group_name_uuid_cache,
-                )
+            sync.sync_user(user=user)
+
+        sync.print_summary(total_users=len(cfg_users))
 
 
 if __name__ == "__main__":
