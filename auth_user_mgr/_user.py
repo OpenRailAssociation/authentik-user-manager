@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Classes and functions for users and groups"""
+"""Classes and functions for users and groups."""
 
 from slugify import slugify
 
@@ -20,7 +20,7 @@ class User:
         invite_slug (str): The invitation slug generated from the user's name.
     """
 
-    def __init__(self, name: str, email: str, configured_groups: list[str]):
+    def __init__(self, name: str, email: str, configured_groups: list[str]) -> None:
         """
         Args:
             name (str): The name of the user.

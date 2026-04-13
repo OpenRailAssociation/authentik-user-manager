@@ -4,7 +4,7 @@
 
 """
 Fixtures for testing the auth_user_mgr package. This module provides fixtures to load sample
-configurations and create User objects for testing purposes
+configurations and create User objects for testing purposes.
 """
 
 from pathlib import Path
@@ -24,9 +24,10 @@ API_FIXTURE_DIR = Path("tests/data/api")
 
 
 @pytest.fixture(name="sample_configs_userfile")
-def fixture_sample_configs_userfile():
+def fixture_sample_configs_userfile() -> tuple[dict, list[dict]]:
     """
     Fixture to load sample application and user configurations (single file).
+
     Returns:
         tuple: A tuple containing the application configuration and user configuration.
     """
@@ -37,9 +38,10 @@ def fixture_sample_configs_userfile():
 
 
 @pytest.fixture(name="sample_configs_userdir")
-def fixture_sample_configs_userdir():
+def fixture_sample_configs_userdir() -> tuple[dict, list[dict]]:
     """
     Fixture to load sample application and user configurations (directory).
+
     Returns:
         tuple: A tuple containing the application configuration and user configuration.
     """
@@ -48,7 +50,7 @@ def fixture_sample_configs_userdir():
 
 
 @pytest.fixture(name="sample_users")
-def fixture_sample_users(sample_configs):
+def fixture_sample_users(sample_configs) -> list[User]:
     """
     Fixture to create a list of User objects from sample user configurations.
 
@@ -68,34 +70,35 @@ def fixture_sample_users(sample_configs):
 
 @pytest.fixture(name="sample_api")
 def fixture_sample_api() -> AuthentikAPI:
-    """Fixture to create a sample AuthentikAPI instance for testing"""
-
+    """Fixture to create a sample AuthentikAPI instance for testing."""
     # Patch the get_flows method to avoid real HTTP call in constructor
     with patch(
         "auth_user_mgr._api.AuthentikAPI.get_flows", return_value=[{"pk": "fake-flow-uuid"}]
     ):
         return AuthentikAPI(
             url="https://auth.example.com",
-            token="dummy-token",
+            token="dummy-token",  # noqa: S106
             invitation_flow_slug="invitation-flow",
             dry=False,
         )
 
 
 @pytest.fixture(name="mock_api_call")
-def fixture_mock_api_call(monkeypatch):
+def fixture_mock_api_call(monkeypatch) -> callable:
     """
     Fixture to mock API calls in tests.
     This fixture allows you to mock API calls by specifying the HTTP method and the fixture name
     that contains the expected response.
+
     Args:
         monkeypatch: The pytest monkeypatch fixture to modify the behavior of the requests module.
+
     Returns:
         function: A function that takes an HTTP method (e.g., "GET", "POST") and a fixture name,
         and returns a mock function that simulates the API call.
     """
 
-    def _mock(method: str, fixture_name: str):
+    def _mock(method: str, fixture_name: str) -> MagicMock:
         response = MagicMock()
         response.status_code = 200
         fixture_path = Path(API_FIXTURE_DIR) / fixture_name

@@ -2,59 +2,94 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-[tool.poetry]
+[project]
 name = "authentik-user-manager"
 version = "1.0.6"
 description = "Managing Authentik users via YAML files"
-repository = "https://github.com/OpenRailAssociation/authentik-user-manager"
-keywords = ["authentik", "user-management"]
-authors = ["Max Mehl <max.mehl@deutschebahn.com>"]
+authors = [{ name = "Max Mehl", email = "max.mehl@deutschebahn.com" }]
+requires-python = ">=3.10,<4"
 readme = "README.md"
 license = "Apache-2.0"
-packages = [{ include = "auth_user_mgr" }]
+keywords = [
+    "authentik",
+    "user-management",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "pyyaml>=6.0.2,<7",
+    "requests>=2.32.3,<3",
+    "jinja2>=3.1.5,<4",
+    "python-slugify>=8.0.4,<9",
+    "jsonschema>=4.25.0,<5",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-pyyaml = "^6.0.2"
-requests = "^2.32.3"
-jinja2 = "^3.1.5"
-python-slugify = "^8.0.4"
-jsonschema = "^4.25.0"
+[project.urls]
+Repository = "https://github.com/OpenRailAssociation/authentik-user-manager"
 
-[tool.poetry.scripts]
+[project.scripts]
 auth-user-mgr = "auth_user_mgr.main:cli"
 
-[tool.poetry.group.dev.dependencies]
-isort = "^8.0.0"
-mypy = "^1.15.0"
-pylint = "^4.0.0"
-black = "^26.0.0"
-types-requests = "^2.32.0.20241016"
-bump-my-version = "^1.1.2"
-pytest = "^9.0.0"
+[dependency-groups]
+dev = [
+    "ruff>=0.15.10",
+    "ty>=0.0.29",
+    # "types-requests>=2.32.0.20241016,<3",
+    "bump-my-version>=1.1.2,<2",
+    "pytest>=9.0.0,<10",
+]
+
+[tool.uv]
+default-groups = "all"
+
+[tool.uv.build-backend]
+module-name = ["auth_user_mgr"]
+module-root = ""
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.11.6,<0.12.0"]
+build-backend = "uv_build"
 
-# FORMATTING settings
-[tool.isort]
-profile = "black"
-
-[tool.black]
+# FORMATTING and LINTING settings
+[tool.ruff]
 line-length = 100
 
-# MYPY settings
-[tool.mypy]
-files = ["auth_user_mgr/*.py"]
-disable_error_code = ["import-untyped"]
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "T",
+    "FBT",
+    "LOG015",
+    "COM812",
+    "ERA001",
+    "S310",
+    "D205",
+    "D212",
+    "PTH123",
+]
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/*" = ["S101", "PLR", "PT011", "ANN001"]
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+# TY settings
+[tool.ty.src]
+include = ["auth_user_mgr"]
 
 # Bump-My-Version
 [tool.bumpversion]
 commit = true
 tag = true
+sign_tags = true
 allow_dirty = false
 tag_name = "v{new_version}"
+pre_commit_hooks = ["uv sync", "git add uv.lock"]
 
 [[tool.bumpversion.files]]
 filename = "pyproject.toml"

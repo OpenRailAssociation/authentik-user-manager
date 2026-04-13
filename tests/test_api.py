@@ -2,14 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tests for _api.py"""
+"""Tests for _api.py."""
 
 from auth_user_mgr._api import AuthentikAPI
 from auth_user_mgr._user import User
 
 
-def test_list_users(sample_api: AuthentikAPI, mock_api_call):
-    """Test the list_users method of AuthentikAPI"""
+def test_list_users(sample_api: AuthentikAPI, mock_api_call: callable) -> None:
+    """Test the list_users method of AuthentikAPI."""
     mock_api_call("GET", "core-users-GET.json")
     users = sample_api.list_users()
 
@@ -21,8 +21,8 @@ def test_list_users(sample_api: AuthentikAPI, mock_api_call):
     ]
 
 
-def test_get_users_with_filter(sample_api: AuthentikAPI, mock_api_call):
-    """Test get_users with attribute filtering (e.g. email=...)"""
+def test_get_users_with_filter(sample_api: AuthentikAPI, mock_api_call: callable) -> None:
+    """Test get_users with attribute filtering (e.g. email=...)."""
     mock_get = mock_api_call("GET", "core-users-GET-filter.json")
     users = sample_api.get_users(email="tester@example.com")
 
@@ -32,8 +32,8 @@ def test_get_users_with_filter(sample_api: AuthentikAPI, mock_api_call):
     assert mock_get.call_args[1]["params"]["email"] == "tester@example.com"
 
 
-def test_get_user_by_id(sample_api: AuthentikAPI, mock_api_call):
-    """Test get_user_by_id returns correct user dict"""
+def test_get_user_by_id(sample_api: AuthentikAPI, mock_api_call: callable) -> None:
+    """Test get_user_by_id returns correct user dict."""
     mock_get = mock_api_call("GET", "core-users-GET-id-3.json")
     user = sample_api.get_user_by_id(3)
 
@@ -44,8 +44,8 @@ def test_get_user_by_id(sample_api: AuthentikAPI, mock_api_call):
     assert "/core/users/3/" in mock_get.call_args[0][0]
 
 
-def test_get_invitation_link(sample_api: AuthentikAPI):
-    """Test get_invitation_link returns correct invitation link"""
+def test_get_invitation_link(sample_api: AuthentikAPI) -> None:
+    """Test get_invitation_link returns correct invitation link."""
     # Example UUID
     invitation_id = "abc123"
 
@@ -57,10 +57,10 @@ def test_get_invitation_link(sample_api: AuthentikAPI):
     assert link == "https://auth.example.com/if/flow/invitation-flow/?itoken=abc123"
 
 
-def test_create_invitation(sample_api: AuthentikAPI, mock_api_call):
-    """Test create_invitation creates an invitation and returns the link"""
+def test_create_invitation(sample_api: AuthentikAPI, mock_api_call: callable) -> None:
+    """Test create_invitation creates an invitation and returns the link."""
     # Mock the POST invitation creation
-    sample_api.get_users = lambda **kwargs: []  # type: ignore[method-assign]
+    sample_api.get_users = lambda **kwargs: []  # noqa: ARG005
     mock_post = mock_api_call("POST", "stages-invitatation-invitations-POST.json")
 
     # Prepare the user

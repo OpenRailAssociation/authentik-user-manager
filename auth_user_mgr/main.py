@@ -50,7 +50,7 @@ parser_sync.add_argument("--no-email", action="store_true", help="Do not send an
 def configure_logger(verbose: bool = False, debug: bool = False) -> logging.Logger:
     """
     Configure and return a logger with appropriate settings. If verbose or debug is False (default),
-    logging level is WARNING
+    logging level is WARNING.
 
     Args:
         verbose (bool, optional): If True, sets log level to INFO. Defaults to False.
@@ -61,7 +61,6 @@ def configure_logger(verbose: bool = False, debug: bool = False) -> logging.Logg
     """
     log = logging.getLogger()
     logging.basicConfig(
-        encoding="utf-8",
         format="[%(asctime)s] %(levelname)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )

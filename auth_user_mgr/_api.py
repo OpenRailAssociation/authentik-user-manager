@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Functions for handling Authentik and its API"""
+"""Functions for handling Authentik and its API."""
 
 import json
 import logging
@@ -16,9 +16,9 @@ from ._user import User
 
 
 class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
-    """Class for Authentik API and"""
+    """Class for Authentik API and."""
 
-    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    def __init__(  # noqa: PLR0913
         self,
         url: str,
         token: str,
@@ -26,7 +26,7 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
         invitation_expiry_days: int = 30,
         create_missing_groups: bool = False,
         dry: bool = False,
-    ):
+    ) -> None:
         """Initialize the Authentik API client.
 
         Args:
@@ -50,7 +50,7 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
         self.create_missing_groups: bool = create_missing_groups
         self.dry: bool = dry
 
-    def api_call(  # pylint: disable=too-many-positional-arguments, too-many-arguments
+    def api_call(  # noqa: ANN202, C901
         self,
         url: str,
         method: str = "GET",
@@ -97,7 +97,8 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
             elif method == "DELETE":
                 response = requests.delete(url, headers=self.headers, timeout=10)
             else:
-                raise ValueError(f"Invalid method: {method}")
+                msg = f"Invalid method: {method}"
+                raise ValueError(msg)
 
         if response.status_code not in range(200, 300):
             logging.error(
@@ -112,21 +113,22 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
         # Convert response JSON to dict
         try:
             result: dict = json.loads(response.text)
+        except json.JSONDecodeError:
+            logging.debug("API response is not valid JSON: %s", response.text)
+            return {}
+        else:
             if returns_list:
                 logging.debug("API response pagination: %s", result.get("pagination", {}))
                 list_result: list[dict] = result.get("results", [])
                 return list_result
             return result
-        except json.JSONDecodeError:
-            logging.debug("API response is not valid JSON: %s", response.text)
-            return {}
 
     # --------------------------------------------------------------------------
     # USERS
     # --------------------------------------------------------------------------
 
     def list_users(self) -> list[dict]:
-        """List all users
+        """List all users.
 
         NOTE: This function does not support pagination, so it will only return the first page of
         users (typically 100 users)
@@ -134,14 +136,15 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
         api_url = self.url + "/core/users/"
         return self.api_call(url=api_url, returns_list=True)
 
-    def get_users(self, **attributes) -> list[dict]:
+    def get_users(self, **attributes: str) -> list[dict]:
         """Get one or multiple users by optional attributes, see
-        https://docs.goauthentik.io/docs/developer-docs/api/reference/core-users-list"""
+        https://docs.goauthentik.io/docs/developer-docs/api/reference/core-users-list.
+        """
         api_url = self.url + "/core/users/"
         return self.api_call(url=api_url, data=attributes, returns_list=True)
 
     def get_user_by_id(self, user_id: int) -> dict:
-        """Get a specific user by their ID ('pk' key in user dict)"""
+        """Get a specific user by their ID ('pk' key in user dict)."""
         api_url = self.url + "/core/users/" + str(user_id) + "/"
         return self.api_call(url=api_url)
 
@@ -149,36 +152,40 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
     # INVITATIONS
     # --------------------------------------------------------------------------
 
-    def get_flows(self, **attributes) -> list[dict]:
+    def get_flows(self, **attributes: str) -> list[dict]:
         """Get one or multiple flows by optional attributes, see
-        https://docs.goauthentik.io/docs/developer-docs/api/reference/flows-instances-list"""
+        https://docs.goauthentik.io/docs/developer-docs/api/reference/flows-instances-list.
+        """
         api_url = self.url + "/flows/instances/"
         return self.api_call(url=api_url, data=attributes, returns_list=True)
 
     def get_all_open_invitations(self) -> list[dict]:
-        """Retrieve all open invitations"""
+        """Retrieve all open invitations."""
         api_url = self.url + "/stages/invitation/invitations/"
         return self.api_call(url=api_url, returns_list=True)
 
     def get_invitation_by_id(self, invitation_id: int) -> dict:
-        """Get a specific invitation by their ID ('pk' key in dict)"""
+        """Get a specific invitation by their ID ('pk' key in dict)."""
         api_url = self.url + "/stages/invitation/invitations/" + str(invitation_id) + "/"
         return self.api_call(url=api_url)
 
     def get_invitation_flow_uuid(self) -> str:
-        """Get the invitation flow uuid by its slug"""
+        """Get the invitation flow uuid by its slug."""
         flow = self.get_flows(slug=self.flow_slug)
         if len(flow) == 0:
-            raise ValueError(f"Flow with slug {flow} not found")
+            msg = f"Flow with slug {flow} not found"
+            raise ValueError(msg)
         if len(flow) > 1:
-            raise ValueError(f"Multiple flows with slug {flow} found")
+            msg = f"Multiple flows with slug {flow} found"
+            raise ValueError(msg)
         try:
             return str(flow[0]["pk"])
         except KeyError as exc:
-            raise KeyError(f"Flow with slug {flow} has no 'pk' key") from exc
+            msg = f"Flow with slug {flow} has no 'pk' key"
+            raise KeyError(msg) from exc
 
-    def get_invitation_link(self, invitation_id: str):
-        """Create the link with which a user can sign up"""
+    def get_invitation_link(self, invitation_id: str) -> str:
+        """Create the link with which a user can sign up."""
         return make_url(
             remove_path_from_url(self.url),
             "if",
@@ -189,10 +196,11 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
         )
 
     def create_invitation(self, user: User) -> str:
-        """Create a new invitation and return invitation URL"""
+        """Create a new invitation and return invitation URL."""
         # Usernames should be unique
         if self.get_users(username=user.username):
-            raise ValueError(f"User {user.username} already exists")
+            msg = f"User {user.username} already exists"
+            raise ValueError(msg)
 
         api_url = self.url + "/stages/invitation/invitations/"
         # Create an expiry time of now + by default 30 days
@@ -201,7 +209,7 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
             "name": user.invite_slug,  # name if invitation
             "expires": expiry_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             "single_use": False,
-            "flow": self.flow_uuid if self.flow_uuid else None,
+            "flow": self.flow_uuid or None,
             "fixed_data": {
                 "name": user.name,
                 "email": user.email,
@@ -213,7 +221,7 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
         return self.get_invitation_link(invitation_id=api_result.get("pk", ""))
 
     def get_pending_invitation_url_for_email(self, email: str) -> str:
-        """Check if an email is part of a pending invitation, and return invitation URL"""
+        """Check if an email is part of a pending invitation, and return invitation URL."""
         # Only fetch open invitations once, if not already done
         if self.open_invitations is None:
             self.open_invitations = self.get_all_open_invitations()
@@ -223,7 +231,7 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
         return ""
 
     def get_pending_invitation_uuid_for_email(self, email: str) -> str:
-        """Check if an email is part of a pending invitation, and return invitation UUID"""
+        """Check if an email is part of a pending invitation, and return invitation UUID."""
         invitation_url = self.get_pending_invitation_url_for_email(email)
         if invitation_url:
             parsed_url = urlparse(invitation_url)
@@ -232,7 +240,7 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
         return ""
 
     def delete_invitation(self, invitation_uuid: str) -> None:
-        """Delete an invitation"""
+        """Delete an invitation."""
         api_url = self.url + "/stages/invitation/invitations/" + invitation_uuid + "/"
         self.api_call(url=api_url, method="DELETE")
 
@@ -241,12 +249,12 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
     # --------------------------------------------------------------------------
 
     def list_groups(self) -> list[dict]:
-        """List all groups"""
+        """List all groups."""
         api_url = self.url + "/core/groups/"
         return self.api_call(url=api_url, returns_list=True)
 
     def create_group(self, group_name: str) -> str:
-        """Create a new group"""
+        """Create a new group."""
         api_url = self.url + "/core/groups/"
         data = {"name": group_name}
         group = self.api_call(url=api_url, method="POST", data=data)
@@ -254,7 +262,7 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
         return str(group.get("pk", ""))
 
     def get_group_uuid_by_name(self, group_name: str) -> str:
-        """Get a specific group's uuid by its name"""
+        """Get a specific group's uuid by its name."""
         api_url = self.url + "/core/groups/"
         group = self.api_call(url=api_url, data={"name": group_name}, returns_list=True)
 
@@ -264,27 +272,30 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
                 logging.info("Group %s does not exist, creating it", group_name)
                 return self.create_group(group_name=group_name)
 
-            raise ValueError(f"No group with name {group_name} found")
+            msg = f"No group with name {group_name} found"
+            raise ValueError(msg)
         if len(group) > 1:
-            raise ValueError(f"Multiple groups with name {group_name} found")
+            msg = f"Multiple groups with name {group_name} found"
+            raise ValueError(msg)
         try:
             return str(group[0]["pk"])
         except KeyError as exc:
-            raise KeyError(f"Group with name {group_name} has no 'pk' key") from exc
+            msg = f"Group with name {group_name} has no 'pk' key"
+            raise KeyError(msg) from exc
 
     def get_group_by_uuid(self, group_uuid: str) -> dict:
-        """Get a specific group by its uuid"""
+        """Get a specific group by its uuid."""
         api_url = self.url + "/core/groups/" + group_uuid + "/"
         return self.api_call(url=api_url)
 
     def add_user_to_group(self, user_id: int, group_uuid: str) -> None:
-        """Add a user to a group"""
+        """Add a user to a group."""
         api_url = self.url + "/core/groups/" + str(group_uuid) + "/add_user/"
         data = {"pk": user_id}
         self.api_call(url=api_url, method="POST", data=data)
 
     def delete_user_from_group(self, user_id: int, group_uuid: str) -> None:
-        """Delete a user from a group"""
+        """Delete a user from a group."""
         api_url = self.url + "/core/groups/" + str(group_uuid) + "/remove_user/"
         data = {"pk": user_id}
         return self.api_call(url=api_url, method="POST", data=data)
