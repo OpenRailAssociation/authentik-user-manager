@@ -116,13 +116,14 @@ def get_groups_of_users(
 class UserSync:
     """Orchestrates user synchronization and tracks sync statistics."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         api: AuthentikAPI,
         mail: Mail,
         all_users_by_email: dict[str, dict],
         user_group_mapping: dict[int, list[str]],
         group_name_uuid_cache: dict[str, str],
+        delete_unconfigured_users: bool = False,
     ) -> None:
         """Initialize UserSync with API clients, pre-fetched data, and empty stats."""
         self.api = api
@@ -130,11 +131,13 @@ class UserSync:
         self.all_users_by_email = all_users_by_email
         self.user_group_mapping = user_group_mapping
         self.group_name_uuid_cache = group_name_uuid_cache
+        self.delete_unconfigured_users = delete_unconfigured_users
 
         # Stats
         self.users_unchanged: int = 0
         self.users_changed: int = 0
         self.users_pending: int = 0
+        self.users_deleted: int = 0
         self.detail_messages: list[str] = []
 
     def sync_user(self, user: User, invitation_template: str = "") -> None:
@@ -276,10 +279,37 @@ class UserSync:
         print(f"  Unchanged: {self.users_unchanged}")
         print(f"  Changed:   {self.users_changed}")
         print(f"  Pending:   {self.users_pending}")
+        print(f"  Deleted:   {self.users_deleted}")
         if self.detail_messages:
             print("\nDetails:")
             for msg in self.detail_messages:
                 print(f"  {msg}")
+
+    def handle_unconfigured_users(self, configured_emails: set[str]) -> None:
+        """Delete users from Authentik that are not in the configured user inventory.
+
+        Only deletes users of type 'internal'. Service accounts and other user types
+        are skipped.
+
+        Args:
+            configured_emails (set[str]): Set of email addresses from the user configuration.
+        """
+        if not self.delete_unconfigured_users:
+            return
+
+        for email, user_dict in self.all_users_by_email.items():
+            if email in configured_emails:
+                continue
+            # Only delete internal users, skip service accounts and other types
+            user_type = user_dict.get("type", "")
+            if user_type != "internal":
+                logging.info("Skipping deletion of user %s (type: %s)", email, user_type)
+                continue
+            user_id = user_dict.get("pk", 0)
+            logging.info("Deleting unconfigured user %s (ID: %s)", email, user_id)
+            self.api.delete_user(user_id=user_id)
+            self.detail_messages.append(f"{email}: deleted (not in user inventory)")
+            self.users_deleted += 1
 
 
 def cli() -> None:
@@ -327,7 +357,9 @@ def cli() -> None:
 
         # Fetch all users from Authentik upfront and build email lookup
         all_users_by_email: dict[str, dict] = {
-            u["email"]: u for u in api.list_users() if u.get("email")
+            u["email"]: u
+            for u in api.list_users()
+            if u.get("email")  # only include users with email
         }
 
         # Initialize sync orchestrator
@@ -337,16 +369,22 @@ def cli() -> None:
             all_users_by_email=all_users_by_email,
             user_group_mapping=users_and_groups,
             group_name_uuid_cache=group_name_uuid_cache,
+            delete_unconfigured_users=cfg_app.get("delete_unconfigured_users", False),
         )
 
         # Iterate all configured users
+        configured_emails: set[str] = set()
         for user_dict in cfg_users:
             user = User(
                 name=user_dict.get("name", ""),
                 email=user_dict.get("email", ""),
                 configured_groups=user_dict.get("groups", []),
             )
+            configured_emails.add(user.email)
             sync.sync_user(user=user)
+
+        # Delete unconfigured users if enabled
+        sync.handle_unconfigured_users(configured_emails=configured_emails)
 
         sync.print_summary(total_users=len(cfg_users))
 

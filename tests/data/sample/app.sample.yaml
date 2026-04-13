@@ -19,6 +19,9 @@ smtp_from: noreply@example.com
 # Create missing groups. Default: false
 # create_missing_groups: false
 
+# Delete users from Authentik that are not in the configured user inventory. Default: false
+# delete_unconfigured_users: false
+
 # Expiry time for an invitation in days. Default: 30
 # invitation_expiry_days: 30
 

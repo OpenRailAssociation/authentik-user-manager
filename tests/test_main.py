@@ -240,3 +240,95 @@ def test_get_groups_of_users(sample_api: AuthentikAPI, mock_api_call: callable) 
     assert user_mapping[1] == ["Group 1", "Group 2"]
     assert user_mapping[3] == ["Group 1"]
     assert group_cache == {"Group 1": "uuid-g1", "Group 2": "uuid-g2"}
+
+
+def test_handle_unconfigured_users_disabled(sample_sync: UserSync) -> None:
+    """Test handle_unconfigured_users does nothing when disabled."""
+    sample_sync.delete_unconfigured_users = False
+    sample_sync.api.delete_user = MagicMock()
+
+    sample_sync.handle_unconfigured_users(configured_emails=set())
+
+    sample_sync.api.delete_user.assert_not_called()
+    assert sample_sync.users_deleted == 0
+
+
+def test_handle_unconfigured_users_deletes_internal(sample_sync: UserSync) -> None:
+    """Test handle_unconfigured_users deletes internal users not in config."""
+    sample_sync.delete_unconfigured_users = True
+    sample_sync.all_users_by_email = {
+        "configured@example.com": {"pk": 1, "email": "configured@example.com", "type": "internal"},
+        "extra@example.com": {"pk": 2, "email": "extra@example.com", "type": "internal"},
+    }
+    sample_sync.api.delete_user = MagicMock()
+
+    sample_sync.handle_unconfigured_users(configured_emails={"configured@example.com"})
+
+    sample_sync.api.delete_user.assert_called_once_with(user_id=2)
+    assert sample_sync.users_deleted == 1
+    assert len(sample_sync.detail_messages) == 1
+    assert "extra@example.com: deleted" in sample_sync.detail_messages[0]
+
+
+def test_handle_unconfigured_users_skips_service_accounts(sample_sync: UserSync) -> None:
+    """Test handle_unconfigured_users skips non-internal user types."""
+    sample_sync.delete_unconfigured_users = True
+    sample_sync.all_users_by_email = {
+        "service@example.com": {
+            "pk": 10,
+            "email": "service@example.com",
+            "type": "service_account",
+        },
+        "admin@example.com": {
+            "pk": 11,
+            "email": "admin@example.com",
+            "type": "internal_service_account",
+        },
+        "external@example.com": {
+            "pk": 12,
+            "email": "external@example.com",
+            "type": "external",
+        },
+    }
+    sample_sync.api.delete_user = MagicMock()
+
+    sample_sync.handle_unconfigured_users(configured_emails=set())
+
+    sample_sync.api.delete_user.assert_not_called()
+    assert sample_sync.users_deleted == 0
+
+
+def test_handle_unconfigured_users_mixed(sample_sync: UserSync) -> None:
+    """Test handle_unconfigured_users with a mix of types and configured users."""
+    sample_sync.delete_unconfigured_users = True
+    sample_sync.all_users_by_email = {
+        "keep@example.com": {"pk": 1, "email": "keep@example.com", "type": "internal"},
+        "delete@example.com": {"pk": 2, "email": "delete@example.com", "type": "internal"},
+        "svc@example.com": {"pk": 3, "email": "svc@example.com", "type": "service_account"},
+    }
+    sample_sync.api.delete_user = MagicMock()
+
+    sample_sync.handle_unconfigured_users(configured_emails={"keep@example.com"})
+
+    sample_sync.api.delete_user.assert_called_once_with(user_id=2)
+    assert sample_sync.users_deleted == 1
+
+
+def test_print_summary_includes_deleted(
+    sample_sync: UserSync, capsys: pytest.CaptureFixture
+) -> None:
+    """Test print_summary includes deleted count."""
+    sample_sync.users_unchanged = 3
+    sample_sync.users_changed = 0
+    sample_sync.users_pending = 0
+    sample_sync.users_deleted = 2
+    sample_sync.detail_messages = [
+        "a@example.com: deleted (not in user inventory)",
+        "b@example.com: deleted (not in user inventory)",
+    ]
+
+    sample_sync.print_summary(total_users=3)
+
+    captured = capsys.readouterr()
+    assert "Deleted:   2" in captured.out
+    assert "a@example.com: deleted" in captured.out
