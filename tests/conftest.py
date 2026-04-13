@@ -15,7 +15,9 @@ import pytest
 from auth_user_mgr import _api
 from auth_user_mgr._api import AuthentikAPI
 from auth_user_mgr._config import read_app_and_users_config
+from auth_user_mgr._email import Mail
 from auth_user_mgr._user import User
+from auth_user_mgr.main import UserSync
 
 CONFIG_APP_SAMPLE = "tests/data/sample/app.sample.yaml"
 CONFIG_USERS_FILE_SAMPLE = "tests/data/sample/users.sample.yaml"
@@ -139,3 +141,33 @@ def fixture_mock_api_call_paginated(monkeypatch) -> callable:
         return mock_fn
 
     return _mock
+
+@pytest.fixture(name="mock_mail")
+def fixture_mock_mail() -> MagicMock:
+    """Fixture to create a mock Mail instance."""
+    return MagicMock(spec=Mail)
+
+
+@pytest.fixture(name="sample_sync")
+def fixture_sample_sync(sample_api: AuthentikAPI, mock_mail: MagicMock) -> UserSync:
+    """Fixture to create a UserSync instance with pre-populated data."""
+    all_users_by_email = {
+        "tester@example.com": {"pk": 1, "email": "tester@example.com"},
+        "jane@example.com": {"pk": 2, "email": "jane@example.com"},
+    }
+    user_group_mapping = {
+        1: ["Group 1", "Group 2"],
+        2: [],
+    }
+    group_name_uuid_cache = {
+        "Group 1": "uuid-group-1",
+        "Group 2": "uuid-group-2",
+        "Group 3": "uuid-group-3",
+    }
+    return UserSync(
+        api=sample_api,
+        mail=mock_mail,
+        all_users_by_email=all_users_by_email,
+        user_group_mapping=user_group_mapping,
+        group_name_uuid_cache=group_name_uuid_cache,
+    )
