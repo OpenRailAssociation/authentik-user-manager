@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Handle config files"""
+"""Handle config files."""
 
 import logging
 from pathlib import Path
@@ -55,45 +55,54 @@ USER_CONFIG_SCHEMA = {
 
 
 def get_yaml_file_paths(file_or_dir: str) -> list[Path]:
-    """Get paths of YAML files from a directory or a single file"""
+    """Get paths of YAML files from a directory or a single file."""
     path = Path(file_or_dir)
     if path.is_dir():
         return list(path.glob("*.yml")) + list(path.glob("*.yaml"))
     if path.is_file() and path.suffix in {".yaml", ".yml"}:
         return [path]
-    raise ValueError(f"Invalid path: {file_or_dir}. Must be a directory or a YAML file.")
+    msg = f"Invalid path: {file_or_dir}. Must be a directory or a YAML file."
+    raise ValueError(msg)
 
 
-def load_yaml_file(file_path: Path):
-    """Load a YAML file and return its content"""
+def load_yaml_file(file_path: Path) -> dict | list[dict]:
+    """Load a YAML file and return its content."""
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             return yaml.safe_load(f)
     except FileNotFoundError as e:
-        raise FileNotFoundError(f"Config file not found: {file_path}") from e
+        msg = f"Config file not found: {file_path}"
+        raise FileNotFoundError(msg) from e
     except Exception as e:
-        raise RuntimeError(f"Error reading YAML file {file_path}: {e}") from e
+        msg = f"Error reading YAML file {file_path}: {e}"
+        raise RuntimeError(msg) from e
 
 
 def check_unique_key(
     items: list[dict], seen_values: set[str], unique_key: str, source: Path
 ) -> None:
     """Check if the unique key/value exists in the items and raise an error if duplicates are
-    found"""
+    found.
+    """
     for item in items:
-        assert isinstance(item, dict)
+        if not isinstance(item, dict):
+            msg = (
+                f"Invalid item in file '{source}': "
+                f"expected a dictionary, got {type(item).__name__}."
+            )
+            raise TypeError(msg)
         value = item.get(unique_key, "")
         if value in seen_values:
-            raise ValueError(
-                f"The key/value '{unique_key}: {value}' in file '{source}' has already been seen."
-            )
+            msg = f"The key/value '{unique_key}: {value}' in file '{source}' has already been seen."
+            raise ValueError(msg)
         seen_values.add(value)
 
 
 def read_yaml_config_files(file_or_dir: str, unique_key: str = "") -> list[dict]:
     """Read YAML config files from a directory or a single file and return their content as a list
     of dictionaries. If a unique key is provided, ensure that all items have unique values for that
-    key"""
+    key.
+    """
     logging.debug("Reading config file/directory: %s", file_or_dir)
     yaml_file_paths = get_yaml_file_paths(file_or_dir)
     logging.debug("Found YAML files: %s", yaml_file_paths)
@@ -126,7 +135,7 @@ def read_yaml_config_files(file_or_dir: str, unique_key: str = "") -> list[dict]
 
 
 def validate_config_schema(cfg: dict | list[dict], schema: dict) -> None:
-    """Validate the config against a JSON schema"""
+    """Validate the config against a JSON schema."""
     try:
         validate(instance=cfg, schema=schema, format_checker=FormatChecker())
     except ValidationError as e:
@@ -138,7 +147,7 @@ def validate_config_schema(cfg: dict | list[dict], schema: dict) -> None:
 def read_app_and_users_config(
     app_config_path: str, user_config_path: str
 ) -> tuple[dict, list[dict]]:
-    """Read app and user config files and return a tuple of dicts"""
+    """Read app and user config files and return a tuple of dicts."""
     # Load the app and user config files
     app_config: dict = read_yaml_config_files(app_config_path)[0]  # is always a single file
     users_config: list[dict] = read_yaml_config_files(user_config_path, unique_key="email")

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Class and functions to send an email to the invitees"""
+"""Class and functions to send an email to the invitees."""
 
 import logging
 import smtplib
@@ -14,10 +14,10 @@ from pathlib import Path
 from jinja2 import Template
 
 
-class Mail:  # pylint: disable=too-many-instance-attributes
-    """Class for an email with specific template and subject this app will send"""
+class Mail:
+    """Class for an email with specific template and subject this app will send."""
 
-    def __init__(  # pylint: disable=too-many-positional-arguments, too-many-arguments
+    def __init__(  # noqa: PLR0913
         self,
         smtp_server: str,
         smtp_port: str | int,
@@ -26,7 +26,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         smtp_starttls: bool,
         smtp_from: str,
         dry: bool,
-    ):
+    ) -> None:
         self.smtp_server: str = smtp_server
         self.smtp_port: str | int = smtp_port
         self.smtp_user: str = smtp_user
@@ -43,10 +43,10 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         subject_suffix: str,
         instance_url: str,
         instance_title: str,
-    ):
+    ) -> "Mail":
         """
         Fills in the details of the email template and subject suffix, and return the class if you
-        want to create a copy
+        want to create a copy.
 
         :param subject_suffix: Subject suffix for the email
         :param instance_url: URL of the Authentik instance
@@ -59,19 +59,18 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         return self
 
     def get_inbuilt_template_dir(self) -> Path:
-        """Get the inbuilt template directory"""
+        """Get the inbuilt template directory."""
         # Get the directory of the current module
         module_dir = Path(__file__).resolve().parent
 
         # Construct the path to the inbuilt templates directory
-        template_dir = module_dir / "templates"
+        return module_dir / "templates"
 
-        return template_dir
 
     def read_template(self, message: str, template_file: str) -> str:
         """
         Reads a Jinja2 template from a file and returns it as a string. If the template is empty,
-        use the default template from ./templates/<type>.html
+        use the default template from ./templates/<type>.html.
 
         :param message: Message type of the template (e.g., "invitation")
         :param template_file: Path to the Jinja2 template file
@@ -81,19 +80,17 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         if not template_file:
             file_path = self.get_inbuilt_template_dir() / f"{message}.html.j2"
         else:
-            file_path = Path(file_path).resolve()
+            file_path = Path(template_file).resolve()
 
         logging.debug("Reading template for '%s' from '%s'", message, file_path)
 
-        with open(file_path, "r", encoding="utf-8") as file:
+        with open(file_path, encoding="utf-8") as file:
             return file.read()
 
     def send_email(
-        self, message: str, recipient: str, template_file: str = "", **template_vars
+        self, message: str, recipient: str, template_file: str = "", **template_vars: str | int
     ) -> None:
-        """
-        Sends an email using a Jinja2 template.
-        """
+        """Sends an email using a Jinja2 template."""
         # Read and render the email body using Jinja2
         template_str = self.read_template(message=message, template_file=template_file)
         template = Template(template_str, autoescape=True)
@@ -126,5 +123,5 @@ class Mail:  # pylint: disable=too-many-instance-attributes
                 server.sendmail(self.smtp_from, recipient, msg.as_string())
             logging.info("Email sent to %s", recipient)
 
-        except Exception as e:  # pylint: disable=broad-exception-caught
+        except Exception as e:  # noqa: BLE001
             print(f"Failed to send email: {e}")

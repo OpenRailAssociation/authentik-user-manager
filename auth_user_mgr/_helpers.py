@@ -2,25 +2,25 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Helper functions"""
+"""Helper functions."""
 
 import json
 from urllib.parse import urlencode, urlparse
 
 
 def convert_dict_to_json(data: dict) -> str:
-    """Convert a dict to JSON"""
+    """Convert a dict to JSON."""
     return json.dumps(data, indent=2)
 
 
 def remove_path_from_url(url: str) -> str:
-    """Remove the path from a URL"""
+    """Remove the path from a URL."""
     parsed_url = urlparse(url)
     return f"{parsed_url.scheme}://{parsed_url.netloc}"
 
 
-def make_url(base_url: str, *uris: str, **params: str):
-    """Create an URL based on a base URL, paths and query params"""
+def make_url(base_url: str, *uris: str, **params: str) -> str:
+    """Create an URL based on a base URL, paths and query params."""
     url = base_url.rstrip("/")
     for uri in uris:
         _uri = uri.strip("/")
@@ -30,7 +30,7 @@ def make_url(base_url: str, *uris: str, **params: str):
     return url
 
 
-def compare_two_lists(list1: list[str], list2: list[str]):
+def compare_two_lists(list1: list[str], list2: list[str]) -> tuple[list[str], list[str], list[str]]:
     """
     Compares two lists of strings and returns a tuple containing elements
     missing in each list and common elements.
