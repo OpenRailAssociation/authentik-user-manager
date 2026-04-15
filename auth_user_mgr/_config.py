@@ -44,6 +44,7 @@ USER_CONFIG_SCHEMA = {
         "properties": {
             "name": {"type": "string"},
             "email": {"type": "string", "format": "email"},
+            "username": {"type": "string"},
             "groups": {
                 "type": "array",
                 "items": {"type": "string"},

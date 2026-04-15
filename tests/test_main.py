@@ -36,6 +36,7 @@ def test_check_existence_user_exists_stale_invitation(sample_sync: UserSync) -> 
     assert result is True
     sample_sync.api.delete_invitation.assert_called_once_with(invitation_uuid="inv-abc")
     assert len(sample_sync.detail_messages) == 1
+    assert "tester@example.com (tester.testerson)" in sample_sync.detail_messages[0]
     assert "deleting stale invitation" in sample_sync.detail_messages[0]
 
 
@@ -50,6 +51,7 @@ def test_check_existence_user_not_found_pending_invitation(sample_sync: UserSync
 
     assert result is False
     assert len(sample_sync.detail_messages) == 1
+    assert "new@example.com (new.user)" in sample_sync.detail_messages[0]
     assert "pending invitation" in sample_sync.detail_messages[0]
 
 
@@ -65,6 +67,7 @@ def test_check_existence_user_not_found_creates_invitation(sample_sync: UserSync
     sample_sync.api.create_invitation.assert_called_once_with(user=user)
     sample_sync.mail.send_email.assert_called_once()
     assert len(sample_sync.detail_messages) == 1
+    assert "new@example.com (new.user)" in sample_sync.detail_messages[0]
     assert "invitation created and sent" in sample_sync.detail_messages[0]
 
 
@@ -98,6 +101,7 @@ def test_check_group_memberships_add_group(sample_sync: UserSync) -> None:
     assert result is True
     sample_sync.api.add_user_to_group.assert_called_once_with(user_id=1, group_uuid="uuid-group-3")
     assert len(sample_sync.detail_messages) == 1
+    assert "tester@example.com (tester.testerson)" in sample_sync.detail_messages[0]
     assert "added to group 'Group 3'" in sample_sync.detail_messages[0]
 
 
@@ -114,6 +118,7 @@ def test_check_group_memberships_remove_group(sample_sync: UserSync) -> None:
         user_id=1, group_uuid="uuid-group-2"
     )
     assert len(sample_sync.detail_messages) == 1
+    assert "tester@example.com (tester.testerson)" in sample_sync.detail_messages[0]
     assert "removed from group 'Group 2'" in sample_sync.detail_messages[0]
 
 
@@ -258,7 +263,12 @@ def test_handle_unconfigured_users_deletes_internal(sample_sync: UserSync) -> No
     sample_sync.delete_unconfigured_users = True
     sample_sync.all_users_by_email = {
         "configured@example.com": {"pk": 1, "email": "configured@example.com", "type": "internal"},
-        "extra@example.com": {"pk": 2, "email": "extra@example.com", "type": "internal"},
+        "extra@example.com": {
+            "pk": 2,
+            "email": "extra@example.com",
+            "type": "internal",
+            "username": "extra.user",
+        },
     }
     sample_sync.api.delete_user = MagicMock()
 
@@ -267,7 +277,8 @@ def test_handle_unconfigured_users_deletes_internal(sample_sync: UserSync) -> No
     sample_sync.api.delete_user.assert_called_once_with(user_id=2)
     assert sample_sync.users_deleted == 1
     assert len(sample_sync.detail_messages) == 1
-    assert "extra@example.com: deleted" in sample_sync.detail_messages[0]
+    assert "extra@example.com (extra.user)" in sample_sync.detail_messages[0]
+    assert "deleted" in sample_sync.detail_messages[0]
 
 
 def test_handle_unconfigured_users_skips_service_accounts(sample_sync: UserSync) -> None:

@@ -10,6 +10,7 @@
 
 - name: Jane Doe
   email: jane@example.com
+  # username: jane.doe2  # Optional: override auto-generated username
 
 - name: John Doe
   email: john@example.net

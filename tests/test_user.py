@@ -22,7 +22,7 @@ def test_user_initialization_and_properties() -> None:
 def test_user_with_special_characters() -> None:
     """Test user with special characters in the name."""
     user = User(name="Mårten Östlund", email="marten@example.com", configured_groups=["X"])
-    assert user.username == "marten.ostlund"
+    assert user.username == "marten.oestlund"
     assert user.invite_slug.startswith("invite-marten-ostlund")
 
 
@@ -47,3 +47,30 @@ def test_user_with_very_long_name() -> None:
     assert len(user.invite_slug) <= 50
     assert len(user.username) <= 150
     assert user.invite_slug.startswith("invite-firstname")
+
+
+def test_user_with_preset_username() -> None:
+    """Test user with a preset username overrides auto-generation."""
+    user = User(
+        name="Jane Doe",
+        email="jane@example.com",
+        configured_groups=[],
+        username="custom.jane",
+    )
+    assert user.username == "custom.jane"
+    assert user.name == "Jane Doe"
+
+
+def test_user_with_empty_username_falls_back() -> None:
+    """Test user with empty username falls back to auto-generation from name."""
+    user = User(name="Jane Doe", email="jane@example.com", configured_groups=[], username="")
+    assert user.username == "jane.doe"
+
+
+def test_user_with_umlauts() -> None:
+    """Test that German umlauts are transliterated to two-letter equivalents."""
+    user = User(name="Jürgen Müller", email="jm@example.com", configured_groups=[])
+    assert user.username == "juergen.mueller"
+
+    user2 = User(name="Ärgölü Baß", email="test@example.com", configured_groups=[])
+    assert user2.username == "aergoelue.bass"

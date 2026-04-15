@@ -4,7 +4,7 @@
 
 """Classes and functions for users and groups."""
 
-from slugify import slugify
+from slugify import PRE_TRANSLATIONS, slugify
 
 
 class User:
@@ -20,20 +20,23 @@ class User:
         invite_slug (str): The invitation slug generated from the user's name.
     """
 
-    def __init__(self, name: str, email: str, configured_groups: list[str]) -> None:
+    def __init__(
+        self, name: str, email: str, configured_groups: list[str], username: str = ""
+    ) -> None:
         """
         Args:
             name (str): The name of the user.
             email (str): The email address of the user.
             configured_groups (list[str]): The list of groups the user is configured to be
                 a member of.
+            username (str, optional): A preset username. If empty, auto-generated from the name.
         """
         self.id: int
         self.name: str = name
         self.email: str = email
         self.current_groups: list[str]
         self.configured_groups: list[str] = sorted(configured_groups)
-        self.username = self.user_name_to_username()
+        self.username = username or self.user_name_to_username()
         self.invite_slug = self.user_name_to_invite_slug()
 
     def user_name_to_username(self) -> str:
@@ -41,7 +44,8 @@ class User:
 
         This method uses the `slugify` function to convert the user's name into a username. It uses
         dots as separators for spaces and special characters. It preserves hyphens in the name,
-        allowing for names like "John-William Doe-Testerson" to be converted correctly.
+        allowing for names like "John-William Doe-Testerson" to be converted correctly. Umlauts are
+        replaced with their two-letter equivalents (e.g. ä→ae, ö→oe, ü→ue).
 
         Returns:
             str: The username created by converting the user's name, with a maximum length of 150
@@ -49,15 +53,22 @@ class User:
 
         Examples:
             - "Jane Doe" becomes "jane.doe"
-            - "Mårten Östlund" becomes "marten.ostlund"
+            - "Mårten Östlund" becomes "marten.oestlund"
             - "John-William Doe-Testerson" becomes "john-william.doe-testerson"
+            - "Ärgölü Baß" becomes "aergoelue.bass"
         """
         # Pre-process: replace hyphens (as name combiners) with 'HYPHENHERE' to avoid conflicts with
         # slugify
         name_with_hyphens = self.name.replace("-", "HYPHENHERE")
         # Use slugify to create a username, replacing spaces and special chars with dots. Keep case
-        # to enable replacement of 'HYPHENHERE' later.
-        name_sluggified = slugify(name_with_hyphens, separator=".", max_length=150, lowercase=False)
+        # to enable replacement of 'HYPHENHERE' later. Umlaut replacements are applied first.
+        name_sluggified = slugify(
+            name_with_hyphens,
+            separator=".",
+            max_length=150,
+            lowercase=False,
+            replacements=PRE_TRANSLATIONS,
+        )
         # Post-process: replace 'HYPHENHERE' back to hyphens, and convert to lowercase
         return name_sluggified.replace("HYPHENHERE", "-").lower()
 
