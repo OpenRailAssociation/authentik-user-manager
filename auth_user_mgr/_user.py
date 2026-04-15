@@ -20,20 +20,23 @@ class User:
         invite_slug (str): The invitation slug generated from the user's name.
     """
 
-    def __init__(self, name: str, email: str, configured_groups: list[str]) -> None:
+    def __init__(
+        self, name: str, email: str, configured_groups: list[str], username: str = ""
+    ) -> None:
         """
         Args:
             name (str): The name of the user.
             email (str): The email address of the user.
             configured_groups (list[str]): The list of groups the user is configured to be
                 a member of.
+            username (str, optional): A preset username. If empty, auto-generated from the name.
         """
         self.id: int
         self.name: str = name
         self.email: str = email
         self.current_groups: list[str]
         self.configured_groups: list[str] = sorted(configured_groups)
-        self.username = self.user_name_to_username()
+        self.username = username or self.user_name_to_username()
         self.invite_slug = self.user_name_to_invite_slug()
 
     def user_name_to_username(self) -> str:

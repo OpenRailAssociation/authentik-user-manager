@@ -47,3 +47,21 @@ def test_user_with_very_long_name() -> None:
     assert len(user.invite_slug) <= 50
     assert len(user.username) <= 150
     assert user.invite_slug.startswith("invite-firstname")
+
+
+def test_user_with_preset_username() -> None:
+    """Test user with a preset username overrides auto-generation."""
+    user = User(
+        name="Jane Doe",
+        email="jane@example.com",
+        configured_groups=[],
+        username="custom.jane",
+    )
+    assert user.username == "custom.jane"
+    assert user.name == "Jane Doe"
+
+
+def test_user_with_empty_username_falls_back() -> None:
+    """Test user with empty username falls back to auto-generation from name."""
+    user = User(name="Jane Doe", email="jane@example.com", configured_groups=[], username="")
+    assert user.username == "jane.doe"

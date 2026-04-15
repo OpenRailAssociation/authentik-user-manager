@@ -379,6 +379,7 @@ def cli() -> None:
                 name=user_dict.get("name", ""),
                 email=user_dict.get("email", ""),
                 configured_groups=user_dict.get("groups", []),
+                username=user_dict.get("username", ""),
             )
             configured_emails.add(user.email)
             sync.sync_user(user=user)
