@@ -140,6 +140,11 @@ class UserSync:
         self.users_deleted: int = 0
         self.detail_messages: list[str] = []
 
+    @staticmethod
+    def _user_label(email: str, username: str) -> str:
+        """Format a user identifier as 'email (username)' for display."""
+        return f"{email} ({username})"
+
     def sync_user(self, user: User, invitation_template: str = "") -> None:
         """Synchronize a single user: check existence, handle invitations, sync groups.
 
@@ -187,7 +192,8 @@ class UserSync:
                     invite_uuid,
                 )
                 self.detail_messages.append(
-                    f"{user.email}: deleting stale invitation {invite_uuid}"
+                    f"{self._user_label(user.email, user.username)}: "
+                    f"deleting stale invitation {invite_uuid}"
                 )
                 # Delete invitation
                 self.api.delete_invitation(invitation_uuid=invite_uuid)
@@ -196,7 +202,10 @@ class UserSync:
 
         # Check if user is pending invitation. If not, create invitation
         if invite_url := self.api.get_pending_invitation_url_for_email(user.email):
-            self.detail_messages.append(f"{user.email}: pending invitation: {invite_url}")
+            self.detail_messages.append(
+                f"{self._user_label(user.email, user.username)}: "
+                f"pending invitation: {invite_url}"
+            )
         else:
             invitation_url = self.api.create_invitation(user=user)
             logging.info(
@@ -210,7 +219,8 @@ class UserSync:
                 invitation_expiry_days=self.api.invitation_expiry_days,
             )
             self.detail_messages.append(
-                f"{user.email}: invitation created and sent: {invitation_url}"
+                f"{self._user_label(user.email, user.username)}: "
+                f"invitation created and sent: {invitation_url}"
             )
 
         return False
@@ -255,7 +265,9 @@ class UserSync:
             self.api.delete_user_from_group(
                 user_id=user.id, group_uuid=self.group_name_uuid_cache[group]
             )
-            self.detail_messages.append(f"{user.email}: removed from group '{group}'")
+            self.detail_messages.append(
+                f"{self._user_label(user.email, user.username)}: removed from group '{group}'"
+            )
 
         # Add user to groups
         for group in add_to_groups:
@@ -265,7 +277,9 @@ class UserSync:
             self.api.add_user_to_group(
                 user_id=user.id, group_uuid=self.group_name_uuid_cache[group]
             )
-            self.detail_messages.append(f"{user.email}: added to group '{group}'")
+            self.detail_messages.append(
+                f"{self._user_label(user.email, user.username)}: added to group '{group}'"
+            )
 
         return has_changes
 
@@ -306,9 +320,12 @@ class UserSync:
                 logging.info("Skipping deletion of user %s (type: %s)", email, user_type)
                 continue
             user_id = user_dict.get("pk", 0)
+            username = user_dict.get("username", "")
             logging.info("Deleting unconfigured user %s (ID: %s)", email, user_id)
             self.api.delete_user(user_id=user_id)
-            self.detail_messages.append(f"{email}: deleted (not in user inventory)")
+            self.detail_messages.append(
+                f"{self._user_label(email, username)}: deleted (not in user inventory)"
+            )
             self.users_deleted += 1
 
 
