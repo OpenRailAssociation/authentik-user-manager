@@ -89,10 +89,22 @@ tag = true
 sign_tags = true
 allow_dirty = false
 tag_name = "v{new_version}"
-pre_commit_hooks = ["uv sync", "git add uv.lock"]
 
 [[tool.bumpversion.files]]
 filename = "pyproject.toml"
 regex = true
 search = "^version = \"{current_version}\""
 replace = "version = \"{new_version}\""
+
+[[tool.bumpversion.files]]
+filename = "uv.lock"
+search = """
+[[package]]
+name = "authentik-user-manager"
+version = "{current_version}"
+"""
+replace = """
+[[package]]
+name = "authentik-user-manager"
+version = "{new_version}"
+"""
