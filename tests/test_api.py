@@ -22,9 +22,7 @@ def test_list_users(sample_api: AuthentikAPI, mock_api_call: callable) -> None:
     ]
 
 
-def test_list_users_pagination(
-    sample_api: AuthentikAPI, mock_api_call_paginated: callable
-) -> None:
+def test_list_users_pagination(sample_api: AuthentikAPI, mock_api_call_paginated: callable) -> None:
     """Test that list_users paginates through multiple pages."""
     mock_get = mock_api_call_paginated(
         "GET", ["core-users-GET-page1.json", "core-users-GET-page2.json"]

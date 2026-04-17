@@ -203,8 +203,7 @@ class UserSync:
         # Check if user is pending invitation. If not, create invitation
         if invite_url := self.api.get_pending_invitation_url_for_email(user.email):
             self.detail_messages.append(
-                f"{self._user_label(user.email, user.username)}: "
-                f"pending invitation: {invite_url}"
+                f"{self._user_label(user.email, user.username)}: pending invitation: {invite_url}"
             )
         else:
             invitation_url = self.api.create_invitation(user=user)

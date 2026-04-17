@@ -66,7 +66,6 @@ class Mail:
         # Construct the path to the inbuilt templates directory
         return module_dir / "templates"
 
-
     def read_template(self, message: str, template_file: str) -> str:
         """
         Reads a Jinja2 template from a file and returns it as a string. If the template is empty,
