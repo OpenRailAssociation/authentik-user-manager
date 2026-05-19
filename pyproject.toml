@@ -4,7 +4,7 @@
 
 [project]
 name = "authentik-user-manager"
-version = "1.2.1"
+version = "1.2.2"
 description = "Managing Authentik users via YAML files"
 authors = [{ name = "Max Mehl", email = "max.mehl@deutschebahn.com" }]
 requires-python = ">=3.10,<4"
