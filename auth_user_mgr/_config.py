@@ -291,11 +291,12 @@ def update_user_groups_in_yaml_files(
             if user_entry.get("email") != email:
                 continue
 
-            # User found — merge groups
+            # User found — merge groups (append new groups at end to keep existing order)
             existing_groups = list(user_entry.get("groups") or [])
-            merged = sorted(set(existing_groups) | set(groups_to_add))
+            new_groups = [g for g in groups_to_add if g not in existing_groups]
+            merged = existing_groups + sorted(new_groups)
 
-            if merged != sorted(existing_groups):
+            if new_groups:
                 user_entry["groups"] = merged
                 if dry:
                     logging.info(

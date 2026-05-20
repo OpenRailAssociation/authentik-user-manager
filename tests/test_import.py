@@ -213,6 +213,72 @@ class TestUpdateUserGroupsInYamlFiles:
         assert result is True
         assert yaml_file.read_text() == original_content
 
+    def test_new_groups_appended_at_end(self, tmp_path: Path) -> None:
+        """Test that new groups are appended at end, preserving existing order."""
+        yaml_file = tmp_path / "users.yaml"
+        self._write_yaml(
+            yaml_file,
+            """\
+            - name: Alice
+              email: alice@example.com
+              groups:
+                - Zebra Club
+                - Alpha Team
+                - Middle Group
+            """,
+        )
+
+        result = update_user_groups_in_yaml_files(
+            file_paths=[yaml_file],
+            email="alice@example.com",
+            groups_to_add=["Beta Squad", "Alpha Team"],
+        )
+
+        assert result is True
+        from auth_user_mgr._config import load_yaml_file  # noqa: PLC0415
+
+        data = load_yaml_file(yaml_file)
+        groups = list(data[0]["groups"])
+        # Existing groups stay in original order, new ones appended at end
+        assert groups == [
+            "Zebra Club",
+            "Alpha Team",
+            "Middle Group",
+            "Beta Squad",
+        ]
+
+    def test_yaml_formatting_after_update(self, tmp_path: Path) -> None:
+        """Test that YAML formatting is correct after group update."""
+        yaml_file = tmp_path / "users.yaml"
+        yaml_file.write_text(
+            "# Comment\n"
+            "- name: Alice\n"
+            "  email: alice@example.com\n"
+            "  groups:\n"
+            "    - Group 1\n"
+            "\n"
+            "- name: Bob\n"
+            "  email: bob@example.com\n"
+            "  groups:\n"
+            "    - Group 1\n"
+        )
+
+        update_user_groups_in_yaml_files(
+            file_paths=[yaml_file],
+            email="alice@example.com",
+            groups_to_add=["Group 2"],
+        )
+
+        content = yaml_file.read_text()
+        # Verify correct indentation (2 spaces for keys, 4 for groups)
+        assert "  email: alice@example.com\n" in content
+        assert "    - Group 1\n" in content
+        assert "    - Group 2\n" in content
+        # Verify blank line separator between entries is preserved
+        assert "\n\n- name: Bob\n" in content
+        # Verify comment is preserved
+        assert content.startswith("# Comment\n")
+
     def test_searches_multiple_files(self, tmp_path: Path) -> None:
         """Test that multiple files are searched and the correct one is updated."""
         file1 = tmp_path / "group1.yaml"
@@ -316,6 +382,26 @@ class TestAppendUserToYamlFile:
 
         content = yaml_file.read_text()
         assert "bob.custom" in content
+
+    def test_yaml_formatting_on_append(self, tmp_path: Path) -> None:
+        """Test that appended users produce correct YAML formatting."""
+        yaml_file = tmp_path / "users.yaml"
+        user1 = {"name": "Alice", "email": "alice@example.com", "groups": ["Event", "Board"]}
+        user2 = {"name": "Bob", "email": "bob@example.com", "groups": ["Event"]}
+
+        append_user_to_yaml_file(file_path=yaml_file, user_dict=user1)
+        append_user_to_yaml_file(file_path=yaml_file, user_dict=user2)
+
+        content = yaml_file.read_text()
+        # No leading indentation at root level
+        assert content.startswith("- name: Alice\n")
+        # Keys indented 2 spaces
+        assert "  email: alice@example.com\n" in content
+        # Groups indented 4 spaces
+        assert "    - Event\n" in content
+        assert "    - Board\n" in content
+        # Blank line between entries
+        assert "\n\n- name: Bob\n" in content
 
 
 # --- Integration test for run_import ---
