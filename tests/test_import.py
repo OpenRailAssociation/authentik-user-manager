@@ -279,6 +279,31 @@ class TestUpdateUserGroupsInYamlFiles:
         # Verify comment is preserved
         assert content.startswith("# Comment\n")
 
+    def test_comment_between_entries_preserved(self, tmp_path: Path) -> None:
+        """Test that a section comment between entries is preserved after updating groups."""
+        yaml_file = tmp_path / "users.yaml"
+        yaml_file.write_text(
+            "- name: Alice\n"
+            "  email: alice@example.com\n"
+            "  groups:\n"
+            "    - Group 1\n"
+            "\n"
+            "# Section Two\n"
+            "- name: Bob\n"
+            "  email: bob@example.com\n"
+            "  groups:\n"
+            "    - Group 1\n"
+        )
+
+        update_user_groups_in_yaml_files(
+            file_paths=[yaml_file],
+            email="alice@example.com",
+            groups_to_add=["Group 2"],
+        )
+
+        content = yaml_file.read_text()
+        assert "# Section Two\n" in content
+
     def test_searches_multiple_files(self, tmp_path: Path) -> None:
         """Test that multiple files are searched and the correct one is updated."""
         file1 = tmp_path / "group1.yaml"

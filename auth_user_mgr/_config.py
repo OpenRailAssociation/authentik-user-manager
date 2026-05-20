@@ -89,9 +89,15 @@ def _prettify_yaml_formatting(text: str) -> str:
     dedented = [line.removeprefix("  ") for line in lines]
 
     # Insert blank lines between root-level list items (lines starting with '- ')
+    # but not after comments (comments belong with the item that follows them)
     result: list[str] = []
     for i, line in enumerate(dedented):
-        if i > 0 and line.startswith("- ") and dedented[i - 1] != "":
+        if (
+            i > 0
+            and line.startswith("- ")
+            and dedented[i - 1] != ""
+            and not dedented[i - 1].startswith("#")
+        ):
             result.append("")
         result.append(line)
 
@@ -259,6 +265,32 @@ def parse_csv_users(csv_path: str) -> list[dict]:
     return users
 
 
+def _append_groups_in_place(user_entry: dict, new_groups: list[str]) -> None:
+    """Append new groups to a user entry's groups list, preserving ruamel.yaml metadata.
+
+    Handles moving end-of-sequence comments (blank lines, section headers) so they remain
+    at the end after appending new items.
+    """
+    if user_entry.get("groups") is None:
+        user_entry["groups"] = sorted(new_groups)
+        return
+
+    groups_seq = user_entry["groups"]
+    # Move end-of-sequence comment from the current last item so it stays at the end
+    last_idx = len(groups_seq) - 1
+    saved_comment = None
+    if hasattr(groups_seq, "ca") and last_idx in groups_seq.ca.items:
+        saved_comment = groups_seq.ca.items[last_idx]
+        del groups_seq.ca.items[last_idx]
+
+    for group in sorted(new_groups):
+        groups_seq.append(group)
+
+    # Re-attach end comment to the new last item
+    if saved_comment is not None:
+        groups_seq.ca.items[len(groups_seq) - 1] = saved_comment
+
+
 def update_user_groups_in_yaml_files(
     file_paths: list[Path], email: str, groups_to_add: list[str], dry: bool = False
 ) -> bool:
@@ -294,21 +326,25 @@ def update_user_groups_in_yaml_files(
             # User found — merge groups (append new groups at end to keep existing order)
             existing_groups = list(user_entry.get("groups") or [])
             new_groups = [g for g in groups_to_add if g not in existing_groups]
-            merged = existing_groups + sorted(new_groups)
 
             if new_groups:
-                user_entry["groups"] = merged
+                _append_groups_in_place(user_entry, new_groups)
                 if dry:
                     logging.info(
                         "[DRY RUN] Would update groups for %s in %s: %s",
                         email,
                         file_path,
-                        merged,
+                        list(user_entry["groups"]),
                     )
                 else:
                     with open(file_path, "w", encoding="utf-8") as f:
                         yml.dump(data, f, transform=_prettify_yaml_formatting)
-                    logging.info("Updated groups for %s in %s: %s", email, file_path, merged)
+                    logging.info(
+                        "Updated groups for %s in %s: %s",
+                        email,
+                        file_path,
+                        list(user_entry["groups"]),
+                    )
             else:
                 logging.info("User %s already has all required groups in %s", email, file_path)
 
