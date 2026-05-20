@@ -72,7 +72,30 @@ def _get_yaml() -> YAML:
     """Return a configured ruamel.yaml YAML instance."""
     yml = YAML()
     yml.preserve_quotes = True
+    yml.indent(mapping=2, sequence=4, offset=2)
     return yml
+
+
+def _prettify_yaml_formatting(text: str) -> str:
+    """Pretty-print YAML formatting for better readability (opinionated).
+
+    Fix root-level YAML sequence formatting. ruamel.yaml's indent(offset=2) applies to all sequence
+    levels including root, producing '  - item' at the top level. This transform strips that extra
+    indent so root items start at column 0 while nested sequences remain properly indented.
+
+    Additionally, ensures a blank line separates each root-level list item for readability.
+    """
+    lines = text.split("\n")
+    dedented = [line.removeprefix("  ") for line in lines]
+
+    # Insert blank lines between root-level list items (lines starting with '- ')
+    result: list[str] = []
+    for i, line in enumerate(dedented):
+        if i > 0 and line.startswith("- ") and dedented[i - 1] != "":
+            result.append("")
+        result.append(line)
+
+    return "\n".join(result)
 
 
 def load_yaml_file(file_path: Path) -> dict | list[dict]:
@@ -94,7 +117,7 @@ def save_yaml_file(file_path: Path, data: dict | list[dict]) -> None:
     """Write data to a YAML file, preserving comments if originally loaded with ruamel.yaml."""
     yml = _get_yaml()
     with open(file_path, "w", encoding="utf-8") as f:
-        yml.dump(data, f)
+        yml.dump(data, f, transform=_prettify_yaml_formatting)
 
 
 def check_unique_key(
@@ -254,7 +277,10 @@ def update_user_groups_in_yaml_files(
         bool: True if the user was found in any file, False otherwise.
     """
     for file_path in file_paths:
-        data = load_yaml_file(file_path)
+        # Use same YAML instance for load and dump to preserve original formatting
+        yml = _get_yaml()
+        with open(file_path, encoding="utf-8") as f:
+            data = yml.load(f)
 
         if not isinstance(data, list):
             continue
@@ -279,7 +305,8 @@ def update_user_groups_in_yaml_files(
                         merged,
                     )
                 else:
-                    save_yaml_file(file_path, data)
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        yml.dump(data, f, transform=_prettify_yaml_formatting)
                     logging.info("Updated groups for %s in %s: %s", email, file_path, merged)
             else:
                 logging.info("User %s already has all required groups in %s", email, file_path)
@@ -301,8 +328,12 @@ def append_user_to_yaml_file(file_path: Path, user_dict: dict, dry: bool = False
             username.
         dry (bool): If True, do not write changes to disk.
     """
+    # Use same YAML instance for load and dump to preserve original formatting
+    yml = _get_yaml()
+
     if file_path.is_file():
-        data = load_yaml_file(file_path)
+        with open(file_path, encoding="utf-8") as f:
+            data = yml.load(f)
         if not isinstance(data, list):
             data = []
     else:
@@ -315,5 +346,6 @@ def append_user_to_yaml_file(file_path: Path, user_dict: dict, dry: bool = False
     else:
         # Ensure parent directory exists
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        save_yaml_file(file_path, data)
+        with open(file_path, "w", encoding="utf-8") as f:
+            yml.dump(data, f, transform=_prettify_yaml_formatting)
         logging.info("Appended user %s to %s", user_dict.get("email"), file_path)
