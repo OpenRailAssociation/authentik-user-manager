@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.3.0](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.2.2...v1.3.0) (2026-05-20)
+
+
+### 🚀 New Features
+
+* add import function to batch-add/update users with desired group membership ([#129](https://github.com/OpenRailAssociation/authentik-user-manager/issues/129)) ([aa118cb](https://github.com/OpenRailAssociation/authentik-user-manager/commit/aa118cb525d3f8a5d186fcb41620471a15b5b9d4))
+
+
+### 🔥 Bug Fixes
+
+* handle email addresses and especially duplicates case-insensitively ([#130](https://github.com/OpenRailAssociation/authentik-user-manager/issues/130)) ([318ca87](https://github.com/OpenRailAssociation/authentik-user-manager/commit/318ca87762ae76beaa14896cd5abf56da0e7ddd2))
+
+
+### ⚙️ Chores
+
+* **deps:** update zizmorcore/zizmor-action action to v0.5.6 ([#126](https://github.com/OpenRailAssociation/authentik-user-manager/issues/126)) ([2bdb6a4](https://github.com/OpenRailAssociation/authentik-user-manager/commit/2bdb6a4ad5dc28890d1a693c368d0add11a2d35d))
+
 ## [1.2.2](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.2.1...v1.2.2) (2026-05-19)
 
 
