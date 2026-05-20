@@ -140,10 +140,12 @@ def check_unique_key(
             )
             raise TypeError(msg)
         value = item.get(unique_key, "")
-        if value in seen_values:
+        # Normalize email addresses to lowercase for comparison
+        normalized = value.lower() if isinstance(value, str) else value
+        if normalized in seen_values:
             msg = f"The key/value '{unique_key}: {value}' in file '{source}' has already been seen."
             raise ValueError(msg)
-        seen_values.add(value)
+        seen_values.add(normalized)
 
 
 def read_yaml_config_files(file_or_dir: str, unique_key: str = "") -> list[dict]:
@@ -320,7 +322,7 @@ def update_user_groups_in_yaml_files(
         for user_entry in data:
             if not isinstance(user_entry, dict):
                 continue
-            if user_entry.get("email") != email:
+            if (user_entry.get("email") or "").lower() != email.lower():
                 continue
 
             # User found — merge groups (append new groups at end to keep existing order)

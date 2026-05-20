@@ -247,6 +247,31 @@ class TestUpdateUserGroupsInYamlFiles:
             "Beta Squad",
         ]
 
+    def test_email_case_insensitive(self, tmp_path: Path) -> None:
+        """Test that email matching is case-insensitive."""
+        yaml_file = tmp_path / "users.yaml"
+        self._write_yaml(
+            yaml_file,
+            """\
+            - name: Alice
+              email: Alice@Example.COM
+              groups:
+                - Group 1
+            """,
+        )
+
+        result = update_user_groups_in_yaml_files(
+            file_paths=[yaml_file],
+            email="alice@example.com",
+            groups_to_add=["Group 2"],
+        )
+
+        assert result is True
+        content = yaml_file.read_text()
+        assert "Group 2" in content
+        # Original email casing should be preserved in the file
+        assert "Alice@Example.COM" in content
+
     def test_yaml_formatting_after_update(self, tmp_path: Path) -> None:
         """Test that YAML formatting is correct after group update."""
         yaml_file = tmp_path / "users.yaml"

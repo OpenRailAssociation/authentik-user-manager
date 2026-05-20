@@ -207,7 +207,7 @@ class UserSync:
             bool: True if user exists, False if user needs to be invited.
         """
         logging.debug("Processing user %s", user.email)
-        user_exists = self.all_users_by_email.get(user.email)
+        user_exists = self.all_users_by_email.get(user.email.lower())
         # Check if user already exists
         if user_exists:
             # Add user ID
@@ -401,7 +401,7 @@ def run_sync(config: str, users: str, dry: bool, no_email: bool) -> None:
 
     # Fetch all users from Authentik upfront and build email lookup
     all_users_by_email: dict[str, dict] = {
-        u["email"]: u
+        u["email"].lower(): u
         for u in api.list_users()
         if u.get("email")  # only include users with email
     }
@@ -425,7 +425,7 @@ def run_sync(config: str, users: str, dry: bool, no_email: bool) -> None:
             configured_groups=user_dict.get("groups", []),
             username=user_dict.get("username", ""),
         )
-        configured_emails.add(user.email)
+        configured_emails.add(user.email.lower())
         sync.sync_user(user=user)
 
     # Delete unconfigured users if enabled
