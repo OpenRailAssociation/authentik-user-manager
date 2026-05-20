@@ -11,10 +11,17 @@ group membership synchronization, and provides a command-line interface for oper
 
 import argparse
 import logging
+from pathlib import Path
 
 from . import __version__
 from ._api import AuthentikAPI
-from ._config import read_app_and_users_config
+from ._config import (
+    append_user_to_yaml_file,
+    get_yaml_file_paths,
+    parse_csv_users,
+    read_app_and_users_config,
+    update_user_groups_in_yaml_files,
+)
 from ._email import Mail
 from ._helpers import compare_two_lists
 from ._user import User
@@ -45,6 +52,30 @@ parser_sync.add_argument(
     help="Run a dry sync which does not make any productive changes and does not send emails",
 )
 parser_sync.add_argument("--no-email", action="store_true", help="Do not send any emails")
+
+# IMPORT command
+parser_import = subparsers.add_parser(
+    "import",
+    parents=[common_flags],
+    help="Import users from a CSV file into the user inventory YAML files",
+)
+parser_import.add_argument(
+    "-i", "--input", help="Path to CSV file with users to import", required=True
+)
+parser_import.add_argument(
+    "-u", "--users", help="Path to existing user inventory file or directory", required=True
+)
+parser_import.add_argument(
+    "-o", "--output", help="Path to output YAML file for new users", required=True
+)
+parser_import.add_argument(
+    "-g", "--groups", help="Comma-separated list of groups to add", required=True
+)
+parser_import.add_argument(
+    "--dry",
+    action="store_true",
+    help="Dry run: show what would be changed without writing files",
+)
 
 
 def configure_logger(verbose: bool = False, debug: bool = False) -> logging.Logger:
@@ -328,6 +359,150 @@ class UserSync:
             self.users_deleted += 1
 
 
+def run_sync(config: str, users: str, dry: bool, no_email: bool) -> None:
+    """
+    Run the synchronization process: read configurations, initialize API and mail clients,
+    fetch current user and group data, and synchronize each user accordingly.
+
+    Args:
+        config (str): Path to the application configuration YAML file.
+        users (str): Path to the user inventory YAML file or directory.
+        dry (bool): If True, run a dry sync without making changes or sending emails.
+        no_email (bool): If True, do not send any emails (overrides dry).
+    """
+    cfg_app, cfg_users = read_app_and_users_config(config, users)
+
+    # Initiate classes
+    api = AuthentikAPI(
+        url=cfg_app.get("authentik_url", ""),
+        token=cfg_app.get("authentik_token", ""),
+        invitation_flow_slug=cfg_app.get("invitation_flow_slug", ""),
+        create_missing_groups=cfg_app.get("create_missing_groups", False),
+        invitation_expiry_days=cfg_app.get("invitation_expiry_days", 30),
+        dry=dry,
+    )
+    mail = Mail(
+        smtp_server=cfg_app.get("smtp_server", ""),
+        smtp_port=cfg_app.get("smtp_port", ""),
+        smtp_user=cfg_app.get("smtp_user", ""),
+        smtp_password=cfg_app.get("smtp_password", ""),
+        smtp_starttls=cfg_app.get("smtp_starttls", False),
+        smtp_from=cfg_app.get("smtp_from", ""),
+        dry=any([dry, no_email]),
+    )
+    mail.create_copy_with_details(
+        subject_suffix="Invitation to create account",
+        instance_url=cfg_app.get("authentik_url", ""),
+        instance_title=cfg_app.get("authentik_title", ""),
+    )
+
+    # Get all current groups and their users, plus group name-to-uuid cache
+    users_and_groups, group_name_uuid_cache = get_groups_of_users(api=api)
+
+    # Fetch all users from Authentik upfront and build email lookup
+    all_users_by_email: dict[str, dict] = {
+        u["email"]: u
+        for u in api.list_users()
+        if u.get("email")  # only include users with email
+    }
+
+    # Initialize sync orchestrator
+    sync = UserSync(
+        api=api,
+        mail=mail,
+        all_users_by_email=all_users_by_email,
+        user_group_mapping=users_and_groups,
+        group_name_uuid_cache=group_name_uuid_cache,
+        delete_unconfigured_users=cfg_app.get("delete_unconfigured_users", False),
+    )
+
+    # Iterate all configured users
+    configured_emails: set[str] = set()
+    for user_dict in cfg_users:
+        user = User(
+            name=user_dict.get("name", ""),
+            email=user_dict.get("email", ""),
+            configured_groups=user_dict.get("groups", []),
+            username=user_dict.get("username", ""),
+        )
+        configured_emails.add(user.email)
+        sync.sync_user(user=user)
+
+    # Delete unconfigured users if enabled
+    sync.handle_unconfigured_users(configured_emails=configured_emails)
+
+    sync.print_summary(total_users=len(cfg_users))
+
+
+def run_import(input_file: str, groups_args: str, output: str, users: str, dry: bool) -> None:
+    """Run the import command: read users from CSV and add/update them in YAML files.
+
+    For each user in the CSV:
+    - If found in an existing YAML file under --users: merge the specified groups.
+    - If not found: append to the --output YAML file with the specified groups.
+
+    Args:
+        input_file (str): Path to the input CSV file containing users to import.
+        groups_args (str): Comma-separated list of groups to add to each imported user.
+        output (str): Path to the output YAML file where new users will be appended.
+        users (str): Path to existing user inventory file or directory to check for existing users.
+        dry (bool): If True, run a dry import without writing changes to files.
+    """
+    # Parse inputs
+    csv_users = parse_csv_users(input_file)
+    groups = [g.strip() for g in groups_args.split(",") if g.strip()]
+    output_path = Path(output)
+
+    # Resolve existing YAML file paths
+    try:
+        existing_file_paths = get_yaml_file_paths(users)
+    except ValueError:
+        existing_file_paths = []
+
+    # Also include the output file in the search if it already exists
+    if output_path.is_file() and output_path not in existing_file_paths:
+        existing_file_paths.append(output_path)
+
+    users_added = 0
+    users_updated = 0
+
+    for csv_user in csv_users:
+        email = csv_user["email"]
+        name = csv_user["name"]
+        username = csv_user.get("username", "")
+
+        # Try to find and update user in existing files
+        if update_user_groups_in_yaml_files(
+            file_paths=existing_file_paths,
+            email=email,
+            groups_to_add=groups,
+            dry=dry,
+        ):
+            users_updated += 1
+            logging.info("Updated existing user: %s", email)
+        else:
+            # User not found — append to output file
+            user_dict: dict = {"name": name, "email": email}
+            if username:
+                user_dict["username"] = username
+            user_dict["groups"] = sorted(groups)
+
+            append_user_to_yaml_file(
+                file_path=output_path,
+                user_dict=user_dict,
+                dry=dry,
+            )
+            users_added += 1
+            logging.info("Added new user: %s", email)
+
+    # Print summary
+    print(f"Import summary: {len(csv_users)} users processed")
+    print(f"  Added to {output_path}: {users_added}")
+    print(f"  Updated in existing files: {users_updated}")
+    if dry:
+        print("  (dry run — no files were modified)")
+
+
 def cli() -> None:
     """Command-line interface entry point for the Authentik user management tool.
 
@@ -342,68 +517,16 @@ def cli() -> None:
     configure_logger(verbose=args.verbose, debug=args.debug)
 
     if args.command == "sync":
-        cfg_app, cfg_users = read_app_and_users_config(args.config, args.users)
+        run_sync(config=args.config, users=args.users, dry=args.dry, no_email=args.no_email)
 
-        # Initiate classes
-        api = AuthentikAPI(
-            url=cfg_app.get("authentik_url", ""),
-            token=cfg_app.get("authentik_token", ""),
-            invitation_flow_slug=cfg_app.get("invitation_flow_slug", ""),
-            create_missing_groups=cfg_app.get("create_missing_groups", False),
-            invitation_expiry_days=cfg_app.get("invitation_expiry_days", 30),
+    elif args.command == "import":
+        run_import(
+            input_file=args.input,
+            groups_args=args.groups,
+            output=args.output,
+            users=args.users,
             dry=args.dry,
         )
-        mail = Mail(
-            smtp_server=cfg_app.get("smtp_server", ""),
-            smtp_port=cfg_app.get("smtp_port", ""),
-            smtp_user=cfg_app.get("smtp_user", ""),
-            smtp_password=cfg_app.get("smtp_password", ""),
-            smtp_starttls=cfg_app.get("smtp_starttls", False),
-            smtp_from=cfg_app.get("smtp_from", ""),
-            dry=any([args.dry, args.no_email]),
-        )
-        mail.create_copy_with_details(
-            subject_suffix="Invitation to create account",
-            instance_url=cfg_app.get("authentik_url", ""),
-            instance_title=cfg_app.get("authentik_title", ""),
-        )
-
-        # Get all current groups and their users, plus group name-to-uuid cache
-        users_and_groups, group_name_uuid_cache = get_groups_of_users(api=api)
-
-        # Fetch all users from Authentik upfront and build email lookup
-        all_users_by_email: dict[str, dict] = {
-            u["email"]: u
-            for u in api.list_users()
-            if u.get("email")  # only include users with email
-        }
-
-        # Initialize sync orchestrator
-        sync = UserSync(
-            api=api,
-            mail=mail,
-            all_users_by_email=all_users_by_email,
-            user_group_mapping=users_and_groups,
-            group_name_uuid_cache=group_name_uuid_cache,
-            delete_unconfigured_users=cfg_app.get("delete_unconfigured_users", False),
-        )
-
-        # Iterate all configured users
-        configured_emails: set[str] = set()
-        for user_dict in cfg_users:
-            user = User(
-                name=user_dict.get("name", ""),
-                email=user_dict.get("email", ""),
-                configured_groups=user_dict.get("groups", []),
-                username=user_dict.get("username", ""),
-            )
-            configured_emails.add(user.email)
-            sync.sync_user(user=user)
-
-        # Delete unconfigured users if enabled
-        sync.handle_unconfigured_users(configured_emails=configured_emails)
-
-        sync.print_summary(total_users=len(cfg_users))
 
 
 if __name__ == "__main__":
