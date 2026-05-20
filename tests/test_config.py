@@ -65,7 +65,7 @@ def test_user_config_unexpected_keys() -> None:
 
 def test_user_config_wrong_indentation() -> None:
     """Test reading user configuration with wrong indentation."""
-    with pytest.raises(ValueError):
+    with pytest.raises(RuntimeError):
         read_app_and_users_config(CONFIG_APP_SAMPLE, "tests/data/users.wrong_indent.yaml")
 
 

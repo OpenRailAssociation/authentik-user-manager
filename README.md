@@ -80,8 +80,40 @@ auth-user-mgr sync -c <config_file> -u <users_file_or_directory>
 For detailed help on any command with additional flags such as `--dry` and `--no-email`:
 
 ```bash
-auth-user-mgr --help
 auth-user-mgr sync --help
+```
+
+#### import
+
+Import users from a CSV file into the user inventory YAML files. This is useful for batch-adding users to groups, e.g. for events:
+
+```sh
+auth-user-mgr import -i <csv_file> -u <users_file_or_directory> -o <output_yaml> -g <groups>
+```
+
+For each user in the CSV:
+
+- If they already exist in a YAML file under `-u`, their group memberships are updated in-place.
+- If they are not found, they are appended to the `-o` output file with the specified groups.
+
+Example:
+
+```sh
+auth-user-mgr import -i participants.csv -u config/users/ -o config/users/event.yaml -g "Event Group,Speakers"
+```
+
+The CSV file must have the columns `name` and `email` (required). A `username` column is optional — if empty, the username will be auto-generated at sync time. See [`config/users.import.sample.csv`](./config/users.import.sample.csv) for an example.
+
+Use `--dry` to preview changes without modifying any files:
+
+```sh
+auth-user-mgr import -i participants.csv -u config/users/ -o config/users/event.yaml -g "Event Group" --dry
+```
+
+For detailed help:
+
+```bash
+auth-user-mgr import --help
 ```
 
 ### Configuration

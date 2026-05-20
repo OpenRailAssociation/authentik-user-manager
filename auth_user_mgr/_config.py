@@ -2,14 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Handle config files."""
+"""Handle config files for application and users."""
 
+import csv
 import logging
 from pathlib import Path
 
-import yaml
 from jsonschema import FormatChecker, validate
 from jsonschema.exceptions import ValidationError
+from ruamel.yaml import YAML
 
 APP_CONFIG_SCHEMA = {
     "type": "object",
@@ -67,17 +68,62 @@ def get_yaml_file_paths(file_or_dir: str) -> list[Path]:
     raise ValueError(msg)
 
 
+def _get_yaml() -> YAML:
+    """Return a configured ruamel.yaml YAML instance."""
+    yml = YAML()
+    yml.preserve_quotes = True
+    yml.indent(mapping=2, sequence=4, offset=2)
+    return yml
+
+
+def _prettify_yaml_formatting(text: str) -> str:
+    """Pretty-print YAML formatting for better readability (opinionated).
+
+    Fix root-level YAML sequence formatting. ruamel.yaml's indent(offset=2) applies to all sequence
+    levels including root, producing '  - item' at the top level. This transform strips that extra
+    indent so root items start at column 0 while nested sequences remain properly indented.
+
+    Additionally, ensures a blank line separates each root-level list item for readability.
+    """
+    lines = text.split("\n")
+    dedented = [line.removeprefix("  ") for line in lines]
+
+    # Insert blank lines between root-level list items (lines starting with '- ')
+    # but not after comments (comments belong with the item that follows them)
+    result: list[str] = []
+    for i, line in enumerate(dedented):
+        if (
+            i > 0
+            and line.startswith("- ")
+            and dedented[i - 1] != ""
+            and not dedented[i - 1].startswith("#")
+        ):
+            result.append("")
+        result.append(line)
+
+    return "\n".join(result)
+
+
 def load_yaml_file(file_path: Path) -> dict | list[dict]:
     """Load a YAML file and return its content."""
     try:
+        yml = _get_yaml()
         with open(file_path, encoding="utf-8") as f:
-            return yaml.safe_load(f)
+            data = yml.load(f)
+        return data if data is not None else []  # noqa: TRY300
     except FileNotFoundError as e:
         msg = f"Config file not found: {file_path}"
         raise FileNotFoundError(msg) from e
     except Exception as e:
         msg = f"Error reading YAML file {file_path}: {e}"
         raise RuntimeError(msg) from e
+
+
+def save_yaml_file(file_path: Path, data: dict | list[dict]) -> None:
+    """Write data to a YAML file, preserving comments if originally loaded with ruamel.yaml."""
+    yml = _get_yaml()
+    with open(file_path, "w", encoding="utf-8") as f:
+        yml.dump(data, f, transform=_prettify_yaml_formatting)
 
 
 def check_unique_key(
@@ -159,3 +205,184 @@ def read_app_and_users_config(
     validate_config_schema(cfg=users_config, schema=USER_CONFIG_SCHEMA)
 
     return app_config, users_config
+
+
+def parse_csv_users(csv_path: str) -> list[dict]:
+    """Parse a CSV file containing user data for import.
+
+    Expected columns: name, email (required); username (optional).
+    Rows with empty name or email are skipped.
+
+    Args:
+        csv_path (str): Path to the CSV file.
+
+    Returns:
+        list[dict]: List of user dictionaries with keys: name, email, and optionally username.
+
+    Raises:
+        FileNotFoundError: If the CSV file does not exist.
+        ValueError: If required columns (name, email) are missing from the CSV header.
+    """
+    path = Path(csv_path)
+    if not path.is_file():
+        msg = f"CSV file not found: {csv_path}"
+        raise FileNotFoundError(msg)
+
+    with open(path, encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f, skipinitialspace=True)
+
+        # Validate required columns
+        fieldnames = [name.strip() for name in (reader.fieldnames or [])]
+        for required in ("name", "email"):
+            if required not in fieldnames:
+                msg = f"CSV file is missing required column: '{required}'"
+                raise ValueError(msg)
+
+        users: list[dict] = []
+        for row in reader:
+            # Strip whitespace from keys and values
+            clean_row = {k.strip(): v.strip() for k, v in row.items() if k is not None}
+
+            name = clean_row.get("name", "")
+            email = clean_row.get("email", "")
+
+            # Skip rows with missing required fields
+            if not name or not email:
+                logging.debug("Skipping CSV row with empty name or email: %s", clean_row)
+                continue
+
+            user: dict = {"name": name, "email": email}
+            username = clean_row.get("username", "")
+            if username:
+                user["username"] = username
+
+            users.append(user)
+
+    # Validate parsed users against the user config schema
+    validate_config_schema(cfg=users, schema=USER_CONFIG_SCHEMA)
+
+    logging.info("Parsed %d users from CSV file: %s", len(users), csv_path)
+    return users
+
+
+def _append_groups_in_place(user_entry: dict, new_groups: list[str]) -> None:
+    """Append new groups to a user entry's groups list, preserving ruamel.yaml metadata.
+
+    Handles moving end-of-sequence comments (blank lines, section headers) so they remain
+    at the end after appending new items.
+    """
+    if user_entry.get("groups") is None:
+        user_entry["groups"] = sorted(new_groups)
+        return
+
+    groups_seq = user_entry["groups"]
+    # Move end-of-sequence comment from the current last item so it stays at the end
+    last_idx = len(groups_seq) - 1
+    saved_comment = None
+    if hasattr(groups_seq, "ca") and last_idx in groups_seq.ca.items:
+        saved_comment = groups_seq.ca.items[last_idx]
+        del groups_seq.ca.items[last_idx]
+
+    for group in sorted(new_groups):
+        groups_seq.append(group)
+
+    # Re-attach end comment to the new last item
+    if saved_comment is not None:
+        groups_seq.ca.items[len(groups_seq) - 1] = saved_comment
+
+
+def update_user_groups_in_yaml_files(
+    file_paths: list[Path], email: str, groups_to_add: list[str], dry: bool = False
+) -> bool:
+    """Search existing YAML user files for a user by email and merge groups.
+
+    If the user is found, ensures all groups in `groups_to_add` are present in the user's
+    `groups` list. The file is rewritten with comments preserved.
+
+    Args:
+        file_paths (list[Path]): List of YAML file paths to search.
+        email (str): The email address to search for.
+        groups_to_add (list[str]): Groups that should be present for this user.
+        dry (bool): If True, do not write changes to disk.
+
+    Returns:
+        bool: True if the user was found in any file, False otherwise.
+    """
+    for file_path in file_paths:
+        # Use same YAML instance for load and dump to preserve original formatting
+        yml = _get_yaml()
+        with open(file_path, encoding="utf-8") as f:
+            data = yml.load(f)
+
+        if not isinstance(data, list):
+            continue
+
+        for user_entry in data:
+            if not isinstance(user_entry, dict):
+                continue
+            if user_entry.get("email") != email:
+                continue
+
+            # User found — merge groups (append new groups at end to keep existing order)
+            existing_groups = list(user_entry.get("groups") or [])
+            new_groups = [g for g in groups_to_add if g not in existing_groups]
+
+            if new_groups:
+                _append_groups_in_place(user_entry, new_groups)
+                if dry:
+                    logging.info(
+                        "[DRY RUN] Would update groups for %s in %s: %s",
+                        email,
+                        file_path,
+                        list(user_entry["groups"]),
+                    )
+                else:
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        yml.dump(data, f, transform=_prettify_yaml_formatting)
+                    logging.info(
+                        "Updated groups for %s in %s: %s",
+                        email,
+                        file_path,
+                        list(user_entry["groups"]),
+                    )
+            else:
+                logging.info("User %s already has all required groups in %s", email, file_path)
+
+            return True
+
+    return False
+
+
+def append_user_to_yaml_file(file_path: Path, user_dict: dict, dry: bool = False) -> None:
+    """Append a new user entry to a YAML file, creating the file if necessary.
+
+    If the file exists, its content (including comments) is preserved and the new user is
+    appended to the list.
+
+    Args:
+        file_path (Path): Path to the target YAML file.
+        user_dict (dict): User dictionary with keys like name, email, groups, and optionally
+            username.
+        dry (bool): If True, do not write changes to disk.
+    """
+    # Use same YAML instance for load and dump to preserve original formatting
+    yml = _get_yaml()
+
+    if file_path.is_file():
+        with open(file_path, encoding="utf-8") as f:
+            data = yml.load(f)
+        if not isinstance(data, list):
+            data = []
+    else:
+        data = []
+
+    data.append(user_dict)
+
+    if dry:
+        logging.info("[DRY RUN] Would append user %s to %s", user_dict.get("email"), file_path)
+    else:
+        # Ensure parent directory exists
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(file_path, "w", encoding="utf-8") as f:
+            yml.dump(data, f, transform=_prettify_yaml_formatting)
+        logging.info("Appended user %s to %s", user_dict.get("email"), file_path)
