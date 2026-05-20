@@ -115,3 +115,13 @@ def test_users_config_duplicates() -> None:
     """
     with pytest.raises(ValueError):
         read_app_and_users_config(CONFIG_APP_SAMPLE, "tests/data/users.duplicates.yaml")
+
+
+def test_users_config_duplicates_case_insensitive(tmp_path) -> None:
+    """Test that duplicate email detection is case-insensitive."""
+    users_file = tmp_path / "users.yaml"
+    users_file.write_text(
+        "- name: Alice\n  email: Alice@Example.com\n- name: Bob\n  email: alice@example.com\n"
+    )
+    with pytest.raises(ValueError):
+        read_app_and_users_config(CONFIG_APP_SAMPLE, str(users_file))

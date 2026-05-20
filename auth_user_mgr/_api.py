@@ -272,7 +272,7 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
         if self.open_invitations is None:
             self.open_invitations = self.get_all_open_invitations()
         for open_invitation in self.open_invitations:
-            if open_invitation.get("fixed_data", {}).get("email", "") == email:
+            if open_invitation.get("fixed_data", {}).get("email", "").lower() == email.lower():
                 return self.get_invitation_link(open_invitation.get("pk", ""))
         return ""
 
