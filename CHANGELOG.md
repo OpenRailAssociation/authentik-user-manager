@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.3.0...v1.3.1) (2026-05-25)
+
+
+### ⚙️ Chores
+
+* **deps:** lock file maintenance ([#132](https://github.com/OpenRailAssociation/authentik-user-manager/issues/132)) ([7f67e34](https://github.com/OpenRailAssociation/authentik-user-manager/commit/7f67e34c6590be2998cb3031229884f3ad572a74))
+
 ## [1.3.0](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.2.2...v1.3.0) (2026-05-20)
 
 
