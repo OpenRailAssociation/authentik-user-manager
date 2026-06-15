@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.1](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.3.0...v1.3.1) (2026-06-15)
+
+
+### ⚙️ Chores
+
+* **deps:** lock file maintenance ([#132](https://github.com/OpenRailAssociation/authentik-user-manager/issues/132)) ([7f67e34](https://github.com/OpenRailAssociation/authentik-user-manager/commit/7f67e34c6590be2998cb3031229884f3ad572a74))
+* **deps:** lock file maintenance ([#136](https://github.com/OpenRailAssociation/authentik-user-manager/issues/136)) ([0b2f6bb](https://github.com/OpenRailAssociation/authentik-user-manager/commit/0b2f6bb6930a2006b917873cbcc18f213ae59eb8))
+* **deps:** lock file maintenance ([#137](https://github.com/OpenRailAssociation/authentik-user-manager/issues/137)) ([428d28c](https://github.com/OpenRailAssociation/authentik-user-manager/commit/428d28cbecc9829926003713e12dd1646f71a421))
+* **deps:** update github actions group to v6.0.3 ([#134](https://github.com/OpenRailAssociation/authentik-user-manager/issues/134)) ([3d4a2eb](https://github.com/OpenRailAssociation/authentik-user-manager/commit/3d4a2ebc34615aeb7f1fde39709a1eea8a543515))
+* **deps:** update github actions group to v8.2.0 ([#135](https://github.com/OpenRailAssociation/authentik-user-manager/issues/135)) ([68704bb](https://github.com/OpenRailAssociation/authentik-user-manager/commit/68704bb8ef19eef6283aca706cbeff4ac67fc072))
+
 ## [1.3.0](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.2.2...v1.3.0) (2026-05-20)
 
 
