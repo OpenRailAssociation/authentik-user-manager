@@ -1,0 +1,10 @@
+authentik_url: "http://localhost:18999"
+authentik_token: "simulation-token"
+authentik_title: "Simulation Instance"
+invitation_flow_slug: simulation-enrollment-flow
+smtp_server: localhost
+smtp_port: 25
+smtp_user: ""
+smtp_password: ""
+smtp_starttls: false
+smtp_from: noreply@example.com
