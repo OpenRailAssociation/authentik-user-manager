@@ -11,6 +11,7 @@ group membership synchronization, and provides a command-line interface for oper
 
 import argparse
 import logging
+import os
 from pathlib import Path
 
 from . import __version__
@@ -313,21 +314,66 @@ class UserSync:
 
         return has_changes
 
-    def print_summary(self, total_users: int) -> None:
+    def print_summary(self, total_users: int, dry_run: bool = False) -> None:
         """Print sync summary and detail messages.
 
         Args:
             total_users (int): Total number of configured users processed.
+            dry_run (bool): Whether this sync was executed in dry-run mode.
         """
         print(f"Sync summary: {total_users} users processed")
         print(f"  Unchanged: {self.users_unchanged}")
         print(f"  Changed:   {self.users_changed}")
         print(f"  Pending:   {self.users_pending}")
         print(f"  Deleted:   {self.users_deleted}")
+        if dry_run:
+            print("\n⚠️ Dry run: no productive changes and no emails sent")
         if self.detail_messages:
             print("\nDetails:")
             for msg in self.detail_messages:
                 print(f"  {msg}")
+
+        self.write_github_step_summary(total_users=total_users, dry_run=dry_run)
+
+    def write_github_step_summary(self, total_users: int, dry_run: bool = False) -> None:
+        """Append sync summary to GitHub Actions step summary when available.
+
+        Args:
+            total_users (int): Total number of configured users processed.
+            dry_run (bool): Whether this sync was executed in dry-run mode.
+        """
+        summary_path = os.getenv("GITHUB_STEP_SUMMARY", "").strip()
+        if not summary_path:
+            return
+
+        summary_lines = [
+            "### Sync summary",
+            "",
+            f"- Users processed: {total_users}",
+            f"- Unchanged: {self.users_unchanged}",
+            f"- Changed: {self.users_changed}",
+            f"- Pending: {self.users_pending}",
+            f"- Deleted: {self.users_deleted}",
+        ]
+        if dry_run:
+            summary_lines.extend(["", "⚠️ Dry run: no productive changes and no emails sent"])
+
+        if self.detail_messages:
+            summary_lines.extend(
+                [
+                    "",
+                    f"<details><summary>Details ({len(self.detail_messages)})</summary>",
+                    "",
+                ]
+            )
+            summary_lines.extend([f"- {msg}" for msg in self.detail_messages])
+            summary_lines.extend(["", "</details>"])
+
+        try:
+            with Path(summary_path).open(mode="a", encoding="utf-8") as summary_file:
+                summary_file.write("\n".join(summary_lines) + "\n")
+        except OSError as err:
+            logging.warning("Could not write GitHub step summary to %s: %s", summary_path, err)
 
     def handle_unconfigured_users(self, configured_emails: set[str]) -> None:
         """Delete users from Authentik that are not in the configured user inventory.
@@ -431,7 +477,7 @@ def run_sync(config: str, users: str, dry: bool, no_email: bool) -> None:
     # Delete unconfigured users if enabled
     sync.handle_unconfigured_users(configured_emails=configured_emails)
 
-    sync.print_summary(total_users=len(cfg_users))
+    sync.print_summary(total_users=len(cfg_users), dry_run=dry)
 
 
 def run_import(input_file: str, groups_args: str, output: str, users: str, dry: bool) -> None:
