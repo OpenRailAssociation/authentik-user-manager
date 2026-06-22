@@ -41,7 +41,8 @@ EMPTY_PAGE: dict = {
 class MockAuthentikHandler(BaseHTTPRequestHandler):
     """Route GET requests to fixture files; absorb all writes with a 200/204."""
 
-    def do_GET(self) -> None:  # noqa: N802
+    def do_GET(self) -> None:
+        """Serve GET requests using fixture JSON files."""
         parsed = urlparse(self.path)
         path = parsed.path
         qs = parse_qs(parsed.query)
@@ -59,14 +60,16 @@ class MockAuthentikHandler(BaseHTTPRequestHandler):
 
         self._send(200, body)
 
-    def do_POST(self) -> None:  # noqa: N802
-        # Dry run never reaches here, but handle gracefully anyway
+    def do_POST(self) -> None:
+        """Return a minimal 201 response (POSTs are skipped in dry mode)."""
         self._send(201, b'{"pk": "mock-pk"}')
 
-    def do_DELETE(self) -> None:  # noqa: N802
+    def do_DELETE(self) -> None:
+        """Return 204 (DELETEs are skipped in dry mode)."""
         self._send(204, b"")
 
-    def do_PATCH(self) -> None:  # noqa: N802
+    def do_PATCH(self) -> None:
+        """Return 200 (PATCHes are skipped in dry mode)."""
         self._send(200, b"{}")
 
     def _send(self, code: int, body: bytes) -> None:
@@ -77,11 +80,12 @@ class MockAuthentikHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def log_message(self, format: str, *args: object) -> None:  # noqa: A002
-        # Print compact one-liner instead of the default two-liner
+        """Print a compact one-liner to stderr instead of the default two-liner."""
         sys.stderr.write(f"[mock] {self.address_string()} {format % args}\n")
 
 
 def main() -> None:
+    """Parse optional port argument and start the mock server."""
     port = int(sys.argv[1]) if len(sys.argv) > 1 else PORT
     server = HTTPServer(("localhost", port), MockAuthentikHandler)
     # ponytail: flush=True so the CI step that polls readiness sees the line immediately

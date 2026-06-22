@@ -19,6 +19,12 @@ from auth_user_mgr._email import Mail
 from auth_user_mgr._user import User
 from auth_user_mgr.main import UserSync
 
+
+def pytest_configure(_config: pytest.Config) -> None:
+    """Clear GITHUB_STEP_SUMMARY so pytest doesn't write to the CI job summary."""
+    os.environ.pop("GITHUB_STEP_SUMMARY", None)
+
+
 CONFIG_APP_SAMPLE = "tests/data/sample/app.sample.yaml"
 CONFIG_USERS_FILE_SAMPLE = "tests/data/sample/users.sample.yaml"
 CONFIG_USERS_DIR_SAMPLE = "tests/data/sample/users.sample"
