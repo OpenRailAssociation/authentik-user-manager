@@ -105,6 +105,30 @@ jobs:
       - name: Test with pytest
         run: uv run pytest
 
+  # Simulate a real sync using the mock Authentik API server, so the GitHub
+  # Step Summary can be previewed in the workflow UI without a live instance.
+  simulate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/uvbuild
+      - name: Run dry sync against mock Authentik API
+        run: |
+          # Start mock server in background and capture its PID
+          uv run python tests/mock_server.py &
+          SERVER_PID=$!
+          # Poll until the server is accepting connections (max 5 s)
+          for i in $(seq 1 5); do
+            curl -sf http://localhost:18999/api/v3/core/users/ > /dev/null && break || sleep 1
+          done
+          # Run the actual CLI tool — GITHUB_STEP_SUMMARY is set automatically by GitHub Actions
+          uv run auth-user-mgr sync --dry \
+            -c tests/data/app.simulation.yaml \
+            -u tests/data/users.simulation.yaml
+          kill "$SERVER_PID"
+
   # REUSE
   reuse:
     runs-on: ubuntu-latest

@@ -1,0 +1,21 @@
+# Simulation users for the CI dry-run step.
+# Demonstrates all three sync states visible in the GitHub Step Summary:
+#   - tester@example.com: already in Authentik with Group 1 + Group 2 → unchanged
+#   - jane@example.com:   already in Authentik but in no groups → changed (added to Group 1)
+#   - new@example.com:    not in Authentik at all → pending invitation
+
+- name: Tester Testerson
+  email: tester@example.com
+  groups:
+    - Group 1
+    - Group 2
+
+- name: Jane Doe
+  email: jane@example.com
+  groups:
+    - Group 1
+
+- name: New Person
+  email: new@example.com
+  groups:
+    - Group 1

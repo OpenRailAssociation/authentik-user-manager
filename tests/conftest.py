@@ -7,6 +7,7 @@ Fixtures for testing the auth_user_mgr package. This module provides fixtures to
 configurations and create User objects for testing purposes.
 """
 
+import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -18,6 +19,12 @@ from auth_user_mgr._config import read_app_and_users_config
 from auth_user_mgr._email import Mail
 from auth_user_mgr._user import User
 from auth_user_mgr.main import UserSync
+
+
+def pytest_configure() -> None:
+    """Clear GITHUB_STEP_SUMMARY so pytest doesn't write to the CI job summary."""
+    os.environ.pop("GITHUB_STEP_SUMMARY", None)
+
 
 CONFIG_APP_SAMPLE = "tests/data/sample/app.sample.yaml"
 CONFIG_USERS_FILE_SAMPLE = "tests/data/sample/users.sample.yaml"
