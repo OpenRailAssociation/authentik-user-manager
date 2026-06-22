@@ -4,6 +4,7 @@
 
 """Tests for main.py."""
 
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -226,6 +227,105 @@ def test_print_summary_with_details(sample_sync: UserSync, capsys: pytest.Captur
     assert "Details:" in captured.out
     assert "bob@example.com: added to group 'Admin'" in captured.out
     assert "new@example.com: invitation created and sent" in captured.out
+
+
+def test_print_summary_writes_github_step_summary_with_collapsed_details(
+    sample_sync: UserSync,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test print_summary writes GitHub step summary with collapsed details block."""
+    summary_file = tmp_path / "step-summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary_file))
+
+    sample_sync.users_unchanged = 3
+    sample_sync.users_changed = 1
+    sample_sync.users_pending = 1
+    sample_sync.users_deleted = 0
+    sample_sync.detail_messages = [
+        "bob@example.com: added to group 'Admin'",
+        "new@example.com: invitation created and sent: https://example.com/inv",
+    ]
+
+    sample_sync.print_summary(total_users=5)
+
+    content = summary_file.read_text(encoding="utf-8")
+    assert "### Sync summary" in content
+    assert "- Users processed: 5" in content
+    assert "- Unchanged: 3" in content
+    assert "- Changed: 1" in content
+    assert "- Pending: 1" in content
+    assert "- Deleted: 0" in content
+    assert "<details><summary>Details (2)</summary>" in content
+    assert "- bob@example.com: added to group 'Admin'" in content
+    assert "- new@example.com: invitation created and sent: https://example.com/inv" in content
+    assert "</details>" in content
+
+
+def test_print_summary_writes_github_step_summary_without_details(
+    sample_sync: UserSync,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test print_summary writes GitHub step summary without details block."""
+    summary_file = tmp_path / "step-summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary_file))
+
+    sample_sync.users_unchanged = 5
+    sample_sync.users_changed = 0
+    sample_sync.users_pending = 0
+    sample_sync.users_deleted = 0
+    sample_sync.detail_messages = []
+
+    sample_sync.print_summary(total_users=5)
+
+    content = summary_file.read_text(encoding="utf-8")
+    assert "### Sync summary" in content
+    assert "- Users processed: 5" in content
+    assert "<details>" not in content
+
+
+def test_print_summary_dry_run_notice_in_stdout(
+    sample_sync: UserSync, capsys: pytest.CaptureFixture
+) -> None:
+    """Test print_summary emits dry-run notice between summary and details."""
+    sample_sync.users_unchanged = 1
+    sample_sync.users_changed = 0
+    sample_sync.users_pending = 0
+    sample_sync.users_deleted = 0
+    sample_sync.detail_messages = ["x@example.com: pending invitation: https://example.com/i"]
+
+    sample_sync.print_summary(total_users=1, dry_run=True)
+
+    captured = capsys.readouterr()
+    expected_notice = "⚠️ Dry run: no productive changes and no emails sent"
+    assert expected_notice in captured.out
+    assert captured.out.find("Deleted:") < captured.out.find(expected_notice)
+    assert captured.out.find(expected_notice) < captured.out.find("Details:")
+
+
+def test_print_summary_writes_github_step_summary_with_dry_run_notice(
+    sample_sync: UserSync,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test GitHub step summary includes dry-run notice before details."""
+    summary_file = tmp_path / "step-summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary_file))
+
+    sample_sync.users_unchanged = 1
+    sample_sync.users_changed = 0
+    sample_sync.users_pending = 0
+    sample_sync.users_deleted = 0
+    sample_sync.detail_messages = ["x@example.com: pending invitation: https://example.com/i"]
+
+    sample_sync.print_summary(total_users=1, dry_run=True)
+
+    content = summary_file.read_text(encoding="utf-8")
+    expected_notice = "⚠️ Dry run: no productive changes and no emails sent"
+    assert expected_notice in content
+    assert content.find("- Deleted: 0") < content.find(expected_notice)
+    assert content.find(expected_notice) < content.find("<details><summary>Details (1)</summary>")
 
 
 def test_get_groups_of_users(sample_api: AuthentikAPI, mock_api_call: callable) -> None:
