@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.1](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.4.0...v1.4.1) (2026-06-27)
+
+
+### ⚙️ Chores
+
+* **deps:** update actions/setup-python action to v6.3.0 ([#145](https://github.com/OpenRailAssociation/authentik-user-manager/issues/145)) ([7c2b98a](https://github.com/OpenRailAssociation/authentik-user-manager/commit/7c2b98a1a16642dd5c73276142058e27f6b1bdbc))
+* **deps:** update github actions group ([#143](https://github.com/OpenRailAssociation/authentik-user-manager/issues/143)) ([1140cc1](https://github.com/OpenRailAssociation/authentik-user-manager/commit/1140cc1eba00e423c6d414269540954a0f23461a))
+
 ## [1.4.0](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.3.0...v1.4.0) (2026-06-22)
 
 
