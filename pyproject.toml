@@ -10,6 +10,7 @@ authors = [{ name = "Max Mehl", email = "max.mehl@deutschebahn.com" }]
 requires-python = ">=3.10,<4"
 readme = "README.md"
 license = "Apache-2.0"
+license-files = ["LICENSE", "LICENSES/*"]
 keywords = ["authentik", "user-management"]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -29,6 +30,7 @@ dependencies = [
 
 [project.urls]
 Repository = "https://github.com/OpenRailAssociation/authentik-user-manager"
+Changelog = "https://github.com/OpenRailAssociation/authentik-user-manager/blob/main/CHANGELOG.md"
 
 [project.scripts]
 auth-user-mgr = "auth_user_mgr.main:cli"
