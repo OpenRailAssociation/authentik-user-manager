@@ -45,7 +45,7 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
         }
         self.flow_slug: str = invitation_flow_slug
         self.flow_uuid: str = self.get_invitation_flow_uuid()
-        self.open_invitations: None | list[dict] = None
+        self.open_invitations: list[dict] | None = None
         self.invitation_expiry_days: int = int(invitation_expiry_days)
         self.create_missing_groups: bool = create_missing_groups
         self.dry: bool = dry
