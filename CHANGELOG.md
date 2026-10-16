@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.4.2](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.4.1...v1.4.2) (2026-10-16)
+
+
+### ⚙️ Chores
+
+* **deps:** lock file maintenance ([#181](https://github.com/OpenRailAssociation/authentik-user-manager/issues/181)) ([9be4a49](https://github.com/OpenRailAssociation/authentik-user-manager/commit/9be4a49f69bbfe564225e53d0f592564be159786))
+* **deps:** update actions/create-github-app-token action to v3.3.0 ([#186](https://github.com/OpenRailAssociation/authentik-user-manager/issues/186)) ([9802f89](https://github.com/OpenRailAssociation/authentik-user-manager/commit/9802f8985a3816d4580951cdb1b24a3c219582b4))
+* **deps:** update astral-sh/setup-uv action to v10.3.0 ([#183](https://github.com/OpenRailAssociation/authentik-user-manager/issues/183)) ([8569fa0](https://github.com/OpenRailAssociation/authentik-user-manager/commit/8569fa03445a8826a27daae6e4347aee212125b7))
+* **deps:** update dependency python to 3.15 ([#185](https://github.com/OpenRailAssociation/authentik-user-manager/issues/185)) ([09adc52](https://github.com/OpenRailAssociation/authentik-user-manager/commit/09adc5283c4a7434ff5e895d26b53bf88dff8658))
+* **deps:** update dependency uv_build to &gt;=0.13.0,&lt;0.14.0 ([#184](https://github.com/OpenRailAssociation/authentik-user-manager/issues/184)) ([235235d](https://github.com/OpenRailAssociation/authentik-user-manager/commit/235235d60da25f7a2cc8a746188709a084ec11b9))
+
 ## [1.4.1](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.4.0...v1.4.1) (2026-10-05)
 
 
