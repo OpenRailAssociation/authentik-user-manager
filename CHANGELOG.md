@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.4.2](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.4.1...v1.4.2) (2026-10-26)
+
+
+### ⚙️ Chores
+
+* **deps:** lock file maintenance ([#181](https://github.com/OpenRailAssociation/authentik-user-manager/issues/181)) ([9be4a49](https://github.com/OpenRailAssociation/authentik-user-manager/commit/9be4a49f69bbfe564225e53d0f592564be159786))
+* **deps:** lock file maintenance ([#189](https://github.com/OpenRailAssociation/authentik-user-manager/issues/189)) ([b1a914e](https://github.com/OpenRailAssociation/authentik-user-manager/commit/b1a914e4f494cb0edc0fbb2b7ae7baa41b27ec19))
+* **deps:** lock file maintenance ([#194](https://github.com/OpenRailAssociation/authentik-user-manager/issues/194)) ([d9f5bda](https://github.com/OpenRailAssociation/authentik-user-manager/commit/d9f5bda8520e240eb89c7c841b076ece60599f76))
+* **deps:** update actions/create-github-app-token action to v3.3.0 ([#186](https://github.com/OpenRailAssociation/authentik-user-manager/issues/186)) ([9802f89](https://github.com/OpenRailAssociation/authentik-user-manager/commit/9802f8985a3816d4580951cdb1b24a3c219582b4))
+* **deps:** update astral-sh/setup-uv action to v10.3.0 ([#183](https://github.com/OpenRailAssociation/authentik-user-manager/issues/183)) ([8569fa0](https://github.com/OpenRailAssociation/authentik-user-manager/commit/8569fa03445a8826a27daae6e4347aee212125b7))
+* **deps:** update astral-sh/setup-uv action to v10.3.1 ([#192](https://github.com/OpenRailAssociation/authentik-user-manager/issues/192)) ([43909c8](https://github.com/OpenRailAssociation/authentik-user-manager/commit/43909c81c634c38e51648bc4be59edc94fea783b))
+* **deps:** update dependency python to 3.15 ([#185](https://github.com/OpenRailAssociation/authentik-user-manager/issues/185)) ([09adc52](https://github.com/OpenRailAssociation/authentik-user-manager/commit/09adc5283c4a7434ff5e895d26b53bf88dff8658))
+* **deps:** update dependency uv_build to &gt;=0.13.0,&lt;0.14.0 ([#184](https://github.com/OpenRailAssociation/authentik-user-manager/issues/184)) ([235235d](https://github.com/OpenRailAssociation/authentik-user-manager/commit/235235d60da25f7a2cc8a746188709a084ec11b9))
+* **deps:** update github actions group ([#193](https://github.com/OpenRailAssociation/authentik-user-manager/issues/193)) ([281bb54](https://github.com/OpenRailAssociation/authentik-user-manager/commit/281bb54b97f8b449c8344b6b3df6f0afd34cfab4))
+* **deps:** update pypa/gh-action-pypi-publish action to v1.14.3 ([#190](https://github.com/OpenRailAssociation/authentik-user-manager/issues/190)) ([188af5b](https://github.com/OpenRailAssociation/authentik-user-manager/commit/188af5b71fae245e631632dd5e79a3b6ee12a702))
+* **deps:** update zizmorcore/zizmor-action action to v0.7.0 ([#187](https://github.com/OpenRailAssociation/authentik-user-manager/issues/187)) ([908ef4c](https://github.com/OpenRailAssociation/authentik-user-manager/commit/908ef4c47a04c63c2d86e1d8fc4bc72733d14c0b))
+* **deps:** update zizmorcore/zizmor-action action to v0.7.1 ([#188](https://github.com/OpenRailAssociation/authentik-user-manager/issues/188)) ([d1de8e1](https://github.com/OpenRailAssociation/authentik-user-manager/commit/d1de8e104dc38b2828c258e6971e913d50ecb38b))
+* **deps:** update zizmorcore/zizmor-action action to v0.8.0 ([#195](https://github.com/OpenRailAssociation/authentik-user-manager/issues/195)) ([09c906e](https://github.com/OpenRailAssociation/authentik-user-manager/commit/09c906e6209032d6e1d3b1ed909ac7eea6a545d3))
+
 ## [1.4.1](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.4.0...v1.4.1) (2026-10-05)
 
 
