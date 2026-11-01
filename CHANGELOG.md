@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.3](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.4.2...v1.4.3) (2026-11-01)
+
+
+### ⚙️ Chores
+
+* **deps:** update astral-sh/setup-uv action to v10.3.3 ([#196](https://github.com/OpenRailAssociation/authentik-user-manager/issues/196)) ([c81c8c3](https://github.com/OpenRailAssociation/authentik-user-manager/commit/c81c8c3fb9b8e676b2d2ec1c784b222ffcedf55a))
+
 ## [1.4.2](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.4.1...v1.4.2) (2026-10-26)
 
 
