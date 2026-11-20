@@ -6,7 +6,7 @@
 
 import json
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlparse
 
 import requests
@@ -250,7 +250,7 @@ class AuthentikAPI:  # pylint: disable=too-many-instance-attributes
 
         api_url = self.url + "/stages/invitation/invitations/"
         # Create an expiry time of now + by default 30 days
-        expiry_time = datetime.now(timezone.utc) + timedelta(days=self.invitation_expiry_days)
+        expiry_time = datetime.now(UTC) + timedelta(days=self.invitation_expiry_days)
         data = {
             "name": user.invite_slug,  # name if invitation
             "expires": expiry_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
