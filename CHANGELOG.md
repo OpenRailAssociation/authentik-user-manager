@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.5.0](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.4.2...v1.5.0) (2026-11-20)
+
+
+### 🚀 New Features
+
+* drop support for Python 3.10, add Python 3.15 ([#199](https://github.com/OpenRailAssociation/authentik-user-manager/issues/199)) ([fb55b17](https://github.com/OpenRailAssociation/authentik-user-manager/commit/fb55b17f6e5503ee23d32f22959dd05e0696fd96))
+
+
+### ⚙️ Chores
+
+* **deps:** update astral-sh/setup-uv action to v10.3.3 ([#196](https://github.com/OpenRailAssociation/authentik-user-manager/issues/196)) ([c81c8c3](https://github.com/OpenRailAssociation/authentik-user-manager/commit/c81c8c3fb9b8e676b2d2ec1c784b222ffcedf55a))
+* **deps:** update zizmorcore/zizmor-action action to v0.8.1 ([#198](https://github.com/OpenRailAssociation/authentik-user-manager/issues/198)) ([76026ea](https://github.com/OpenRailAssociation/authentik-user-manager/commit/76026eafc680a1df4af37d5c15487a4541aab3ce))
+
 ## [1.4.2](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.4.1...v1.4.2) (2026-10-26)
 
 
