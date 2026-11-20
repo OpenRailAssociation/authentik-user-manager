@@ -7,18 +7,18 @@ name = "authentik-user-manager"
 version = "1.4.2"
 description = "Managing Authentik users via YAML files"
 authors = [{ name = "Max Mehl", email = "max.mehl@deutschebahn.com" }]
-requires-python = ">=3.10,<4"
+requires-python = ">=3.11,<4"
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "LICENSES/*"]
 keywords = ["authentik", "user-management"]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
 ]
 dependencies = [
     "requests>=2.32.3,<3",
