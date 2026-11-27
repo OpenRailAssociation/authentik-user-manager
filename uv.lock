@@ -13,7 +13,7 @@ wheels = [
 
 [[package]]
 name = "authentik-user-manager"
-version = "1.4.2"
+version = "1.5.0"
 source = { editable = "." }
 default-groups = "all"
 dependencies = [
