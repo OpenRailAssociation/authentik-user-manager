@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.5.0](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.4.2...v1.5.0) (2026-11-27)
+
+
+### 🚀 New Features
+
+* drop support for Python 3.10, add Python 3.15 ([#199](https://github.com/OpenRailAssociation/authentik-user-manager/issues/199)) ([fb55b17](https://github.com/OpenRailAssociation/authentik-user-manager/commit/fb55b17f6e5503ee23d32f22959dd05e0696fd96))
+
+
+### ⚙️ Chores
+
+* **deps:** lock file maintenance ([#201](https://github.com/OpenRailAssociation/authentik-user-manager/issues/201)) ([4807868](https://github.com/OpenRailAssociation/authentik-user-manager/commit/48078683cb5c2c515015485b0742ccb4410fcd4a))
+* **deps:** update actions/create-github-app-token action to v3.4.0 ([#200](https://github.com/OpenRailAssociation/authentik-user-manager/issues/200)) ([83bd081](https://github.com/OpenRailAssociation/authentik-user-manager/commit/83bd081b856252cddee393ac227791f871df6af9))
+* **deps:** update astral-sh/setup-uv action to v10.3.3 ([#196](https://github.com/OpenRailAssociation/authentik-user-manager/issues/196)) ([c81c8c3](https://github.com/OpenRailAssociation/authentik-user-manager/commit/c81c8c3fb9b8e676b2d2ec1c784b222ffcedf55a))
+* **deps:** update astral-sh/setup-uv action to v10.4.0 ([#202](https://github.com/OpenRailAssociation/authentik-user-manager/issues/202)) ([34bdac9](https://github.com/OpenRailAssociation/authentik-user-manager/commit/34bdac9af696e1c3a63a0f2e4cc3d9d7d0fcbebe))
+* **deps:** update zizmorcore/zizmor-action action to v0.8.1 ([#198](https://github.com/OpenRailAssociation/authentik-user-manager/issues/198)) ([76026ea](https://github.com/OpenRailAssociation/authentik-user-manager/commit/76026eafc680a1df4af37d5c15487a4541aab3ce))
+* **deps:** update zizmorcore/zizmor-action action to v0.9.1 ([#203](https://github.com/OpenRailAssociation/authentik-user-manager/issues/203)) ([07a88cb](https://github.com/OpenRailAssociation/authentik-user-manager/commit/07a88cb26415d7aa2fbb3fea8ebbb890d3184057))
+* **deps:** update zizmorcore/zizmor-action action to v0.9.2 ([#204](https://github.com/OpenRailAssociation/authentik-user-manager/issues/204)) ([98e6e21](https://github.com/OpenRailAssociation/authentik-user-manager/commit/98e6e21345cc1d30bd0ae93905d57136012b68a7))
+
 ## [1.4.2](https://github.com/OpenRailAssociation/authentik-user-manager/compare/v1.4.1...v1.4.2) (2026-10-26)
 
 
